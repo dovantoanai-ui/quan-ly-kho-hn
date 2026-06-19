@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quan Ly Kho">
+<meta name="theme-color" content="#1e5fa8">
+<title>Quan Ly Kho</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#eef2f7;--sf:#fff;--bd:#dce5f0;--bd2:#b8c8dc;
+  --tx:#1a2332;--mu:#6b7d99;
+  --bl:#1e5fa8;--blb:#dce8f8;--bld:#154090;
+  --gr:#1a6645;--grb:#d5f5e3;
+  --re:#be3a2c;--reb:#fdecea;
+  --am:#b45309;--amb:#fef3c7;
+  --or:#c05621;--orb:#feebc8;
+  --pu:#553c9a;--pub:#e9d8fd;
+  --sh:0 1px 4px rgba(0,0,0,.08);
+}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+.sc{display:none;min-height:100vh;padding-bottom:120px;}
+.sc.on{display:block;}
+.tb{background:var(--bl);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:80;display:flex;align-items:center;gap:8px;}
+.tb-back{background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tb-ttl{font-size:16px;font-weight:600;flex:1;}
+.tb-sub{font-size:11px;opacity:.7;margin-top:1px;}
+.tb-btn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:7px 10px;border-radius:8px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;white-space:nowrap;}
+.tabnav{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;}
+.tnav{flex:1;padding:11px 4px;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;color:var(--mu);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;text-align:center;}
+.tnav.on{color:var(--bl);border-bottom-color:var(--bl);font-weight:600;}
+.datebar{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.datetap{display:flex;align-items:center;gap:7px;cursor:pointer;position:relative;}
+.datelbl{font-size:15px;font-weight:600;}
+.dateinp{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
+.pills{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.pill-b{background:var(--blb);color:var(--bl);}
+.pill-g{background:var(--grb);color:var(--gr);}
+.pill-p{background:var(--pub);color:var(--pu);}
+.empty{text-align:center;padding:56px 20px;}
+.empty-ico{font-size:36px;margin-bottom:10px;}
+.empty-ttl{font-size:15px;font-weight:600;color:var(--mu);margin-bottom:4px;}
+.empty-sub{font-size:13px;color:var(--mu);opacity:.65;}
+.ecard{background:var(--sf);margin:8px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;cursor:pointer;box-shadow:var(--sh);}
+.ecard:active{border-color:var(--bl);}
+.ecard-h{padding:11px 14px 9px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd);}
+.enum{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.emeta{flex:1;min-width:0;}
+.etitle{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.esub{font-size:12px;color:var(--mu);margin-top:1px;}
+.ecard-b{padding:8px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.b-di{background:var(--blb);color:var(--bl);}
+.b-ve{background:var(--orb);color:var(--or);}
+.b-th{background:var(--pub);color:var(--pu);}
+.b-tg{background:var(--amb);color:var(--am);}
+.b-hy{background:var(--reb);color:var(--re);}
+.b-nhap{background:var(--grb);color:var(--gr);}
+.b-xuat{background:var(--reb);color:var(--re);}
+.b-tang{background:var(--amb);color:var(--am);}
+.b-ban{background:var(--pub);color:var(--pu);}
+.b-huy{background:#fed7d7;color:#822727;}
+.fab{position:fixed;bottom:82px;right:16px;z-index:90;width:56px;height:56px;border-radius:50%;background:var(--bl);color:#fff;border:none;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(30,95,168,.4);}
+.fab:active{background:var(--bld);}
+.bbar{position:fixed;bottom:0;left:0;right:0;z-index:90;background:var(--sf);border-top:1px solid var(--bd);padding:9px 10px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bbtn{display:flex;align-items:center;justify-content:center;gap:6px;padding:13px;border-radius:11px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);}
+.bbtn.pri{background:var(--bl);color:#fff;border-color:var(--bl);}
+.bbtn:active{opacity:.82;}
+.bbtn-gs{display:flex;align-items:center;justify-content:center;gap:5px;padding:13px;border-radius:11px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;background:#0f9d58;color:#fff;}
+.bbtn-gs:active{opacity:.82;}
+.gs-dot{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block;}
+.gs-dot.syncing{animation:pulse .7s infinite alternate;}
+@keyframes pulse{to{opacity:.3;}}
+.sec{background:var(--sf);margin:10px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;box-shadow:var(--sh);}
+.sec-hd{padding:11px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;background:#f4f7fc;}
+.sec-ico{width:26px;height:26px;border-radius:7px;background:var(--blb);color:var(--bl);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sec-ico.gr{background:var(--grb);color:var(--gr);}
+.sec-ico.pu{background:var(--pub);color:var(--pu);}
+.sec-ttl{font-size:13px;font-weight:600;}
+.frow{display:flex;align-items:center;min-height:54px;padding:0 14px;border-bottom:1px solid var(--bd);}
+.frow:last-child{border-bottom:none;}
+.flbl{font-size:12px;color:var(--mu);font-weight:500;width:88px;flex-shrink:0;}
+.finp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;outline:none;background:transparent;padding:8px 0;min-width:0;}
+.finp::placeholder{color:#c5bfb5;}
+.finp:focus{color:var(--bl);}
+select.finp{-webkit-appearance:none;appearance:none;}
+.sdw{position:relative;flex:1;}
+.sdi{width:100%;font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;outline:none;background:transparent;padding:8px 0;}
+.sdi::placeholder{color:#c5bfb5;}
+.sdi:focus{color:var(--bl);}
+.sdl{position:fixed;left:10px;right:10px;background:var(--sf);border:1px solid var(--bd2);border-radius:12px;max-height:220px;overflow-y:auto;z-index:500;box-shadow:0 8px 28px rgba(0,0,0,.15);display:none;}
+.sdl.on{display:block;}
+.sdo{padding:14px 16px;font-size:15px;color:var(--tx);cursor:pointer;border-bottom:.5px solid var(--bd);}
+.sdo:last-child{border-bottom:none;}
+.sdo:active{background:var(--blb);color:var(--bl);}
+.sd-empty{padding:13px 16px;font-size:13px;color:var(--mu);text-align:center;}
+.sd-new{padding:11px 16px;font-size:13px;color:var(--bl);font-weight:500;cursor:pointer;border-top:1px solid var(--bd);}
+.pitem{padding:11px 14px;border-bottom:1px solid var(--bd);}
+.pitem:last-child{border-bottom:none;}
+.pr1{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.pidx{width:20px;height:20px;border-radius:50%;background:var(--blb);color:var(--bl);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pname-inp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;color:var(--tx);border:none;border-bottom:1.5px solid var(--bd);outline:none;background:transparent;padding:4px 0;}
+.pname-inp:focus{border-color:var(--bl);}
+.pname-inp::placeholder{color:#c5bfb5;}
+.bdel{width:28px;height:28px;border-radius:50%;border:none;background:var(--reb);color:var(--re);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stpick{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
+.psel{font-size:12px;font-weight:500;padding:7px 12px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;white-space:nowrap;}
+.psel.a-di{background:var(--blb);color:var(--bl);border-color:var(--bl);}
+.psel.a-ve{background:var(--orb);color:var(--or);border-color:var(--or);}
+.psel.a-th{background:var(--pub);color:var(--pu);border-color:var(--pu);}
+.psel.a-tg{background:var(--amb);color:var(--am);border-color:var(--am);}
+.psel.a-hy{background:var(--reb);color:var(--re);border-color:var(--re);}
+.psel.a-nhap{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.psel.a-xuat{background:var(--reb);color:var(--re);border-color:var(--re);}
+.psel.a-tang{background:var(--amb);color:var(--am);border-color:var(--am);}
+.psel.a-ban{background:var(--pub);color:var(--pu);border-color:var(--pu);}
+.psel.a-huy{background:#fed7d7;color:#822727;border-color:#fc8181;}
+.qty-row{padding-left:28px;margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.qty-lbl{font-size:10px;color:var(--mu);font-weight:500;text-transform:uppercase;letter-spacing:.4px;width:70px;flex-shrink:0;}
+.qty-inp{font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;border-bottom:1.5px solid var(--bd);outline:none;background:transparent;padding:4px 0;width:90px;}
+.qty-inp:focus{border-color:var(--bl);}
+.qty-inp::placeholder{color:#c5bfb5;}
+.mc-pick{display:flex;gap:5px;}
+.mc{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;}
+.mc.on-moi{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.mc.on-cu{background:var(--orb);color:var(--or);border-color:var(--or);}
+.btnadd{margin:10px 14px;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:calc(100% - 28px);}
+.btnadd:active{background:var(--blb);}
+.tot-strip{margin:10px 10px 0;border-radius:13px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.tot-strip.gr{background:var(--gr);}
+.tot-strip.pu{background:var(--pu);}
+.tot-lbl{font-size:13px;color:rgba(255,255,255,.78);font-weight:500;}
+.tot-val{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;}
+.psub{font-size:12px;font-weight:600;color:var(--gr);padding-left:28px;margin-top:5px;min-height:14px;}
+.pay-pick{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0;}
+.pp{font-size:12px;font-weight:500;padding:7px 13px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;white-space:nowrap;}
+.pp.on-paid{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.pp.on-unpaid{background:var(--reb);color:var(--re);border-color:var(--re);}
+.pp.on-partial{background:var(--amb);color:var(--am);border-color:var(--am);}
+.khosel-row{display:flex;gap:8px;flex-wrap:wrap;}
+.khosel{font-size:13px;font-weight:500;padding:8px 16px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;}
+.khosel.on{background:var(--grb);color:var(--gr);border-color:var(--gr);font-weight:600;}
+.factions{margin:12px 10px 0;display:flex;flex-direction:column;gap:8px;}
+.btnsave{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:11px;border:none;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+.btnsave:active{background:var(--bld);}
+.btnsave.grn{background:var(--gr);}
+.btnsave.pun{background:var(--pu);}
+.btndel{display:flex;align-items:center;justify-content:center;padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.mini{display:flex;flex-direction:column;gap:4px;}
+.mlbl{font-size:10px;color:var(--mu);font-weight:500;text-transform:uppercase;letter-spacing:.4px;}
+.rpt-card{background:var(--sf);margin:10px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;box-shadow:var(--sh);}
+.rpt-hd{padding:11px 14px;background:#f4f7fc;border-bottom:1px solid var(--bd);font-size:13px;font-weight:600;}
+.rpt-sub-hd{padding:7px 14px 5px;font-size:12px;font-weight:600;border-bottom:.5px solid var(--bd);}
+.rpt-sub-hd.blue{background:var(--blb);color:var(--bl);}
+.rpt-sub-hd.green{background:var(--grb);color:var(--gr);}
+.rpt-nv-hd{padding:7px 14px 5px;font-size:12px;font-weight:600;color:var(--bl);background:#f0f5fc;border-bottom:.5px solid var(--bd);}
+.rpt-col-hd{display:flex;padding:5px 14px;border-bottom:.5px solid var(--bd);background:#f8fafb;}
+.rpt-row{display:flex;align-items:center;padding:9px 14px;border-bottom:.5px solid var(--bd);}
+.rpt-row:last-child{border-bottom:none;}
+.rpt-name{flex:1;font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.rpt-v{font-size:13px;font-weight:600;min-width:46px;text-align:right;}
+.rpt-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;min-width:46px;text-align:right;}
+.rpt-tot{display:flex;align-items:center;padding:10px 14px;background:#f0f4fa;border-top:1.5px solid var(--bd2);}
+.rpt-tot-lbl{flex:1;font-size:13px;font-weight:600;color:var(--mu);}
+.rpt-tot-v{font-size:13px;font-weight:700;min-width:46px;text-align:right;}
+.rpt-nv-sub{display:flex;align-items:center;padding:7px 14px;background:#f5f8fd;border-top:.5px solid var(--bd2);}
+.set-wrap{padding:10px 10px 0;}
+.itabs{display:flex;gap:0;margin:0 14px;border-radius:8px;overflow:hidden;border:1px solid var(--bd2);}
+.itab{flex:1;padding:8px;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;background:var(--bg);color:var(--mu);border:none;cursor:pointer;}
+.itab.on{background:var(--bl);color:#fff;}
+.ipanel{padding:10px 14px 14px;}
+.bulk-ta{width:100%;min-height:80px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;color:var(--tx);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;outline:none;background:var(--sf);resize:vertical;line-height:1.6;}
+.bulk-ta:focus{border-color:var(--bl);}
+.bulk-ta::placeholder{color:#c5bfb5;}
+.ibtns{display:flex;gap:8px;margin-top:10px;}
+.btnimport{flex:1;padding:10px;border-radius:9px;border:none;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+.btnclr{padding:10px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+.cmng{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;}
+.cx{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--bd2);padding:5px 10px;border-radius:20px;font-size:13px;font-weight:500;}
+.cxd{color:var(--re);font-size:15px;cursor:pointer;}
+.arow{display:flex;gap:8px;padding:2px 14px 12px;}
+.ainp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;color:var(--tx);border:1.5px solid var(--bd);border-radius:9px;padding:9px 12px;outline:none;background:var(--sf);}
+.ainp:focus{border-color:var(--bl);}
+.abtn{background:var(--bl);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.cbadge{display:inline-block;background:var(--blb);color:var(--bl);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:6px;}
+.finp-file{display:none;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:flex-end;}
+.overlay.on{display:flex;}
+.modal{background:var(--sf);border-radius:18px 18px 0 0;padding:20px 16px calc(22px + env(safe-area-inset-bottom));width:100%;}
+.modal-ttl{font-size:16px;font-weight:600;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--mu);margin-bottom:18px;line-height:1.5;}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.modal-no{padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.modal-yes{padding:13px;border-radius:11px;border:none;background:var(--re);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(50px);opacity:0;background:#1a2332;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;transition:transform .2s,opacity .2s;white-space:nowrap;max-width:92vw;text-align:center;}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="sc on" id="s-home">
+  <div class="tb">
+    <div style="flex:1"><div class="tb-ttl">Quan Ly Kho</div></div>
+    <button class="tb-btn" onclick="goReport()">Bao cao</button>
+    <button class="tb-btn" onclick="goHistory()" style="padding:7px 9px;">&#128336;</button>
+    <button class="tb-btn" onclick="goSettings()" style="padding:7px 9px;">&#9881;</button>
+  </div>
+  <div class="tabnav">
+    <button class="tnav on" id="tn0" onclick="switchTab(0)">Hang giao</button>
+    <button class="tnav" id="tn1" onclick="switchTab(1)">Nhap/Xuat</button>
+    <button class="tnav" id="tn2" onclick="switchTab(2)">Don le</button>
+  </div>
+  <div class="datebar">
+    <div class="datetap" onclick="document.getElementById('dInp').click()">
+      <span class="datelbl" id="dLbl"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="dInp" class="dateinp" onchange="onDateChange()">
+    </div>
+    <div class="pills" id="homePills"></div>
+  </div>
+  <div id="homeList"></div>
+  <button class="fab" onclick="openNew()">+</button>
+  <div class="bbar">
+    <button class="bbtn" onclick="copyZalo()">Zalo</button>
+    <button class="bbtn-gs" onclick="pushToSheet()" id="gsBtn"><span class="gs-dot" id="gsDot"></span>&#128209; Sheet</button>
+  </div>
+</div>
+
+<!-- HANG GIAO FORM -->
+<div class="sc" id="s-hang">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="hTtl">Phieu hang giao</div><div class="tb-sub" id="hSub"></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico">&#128666;</div><div class="sec-ttl">Thong tin hang giao</div></div>
+    <div class="frow">
+      <span class="flbl">Giao hang</span>
+      <div class="sdw"><input class="sdi" id="fGH" type="text" placeholder="Ten nguoi giao hang..." autocomplete="off"><div class="sdl" id="sdGH"></div></div>
+    </div>
+    <div id="hProdRows"></div>
+    <button class="btnadd" onclick="addHRow()">+ Them san pham</button>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="frow"><span class="flbl">Ghi chu</span><input class="finp" id="hNotes" type="text" placeholder="Ghi chu..."></div>
+  </div>
+  <div class="factions">
+    <button class="btnsave" onclick="saveHang()">Luu phieu hang giao</button>
+    <button class="btndel" id="hDelBtn" style="display:none" onclick="confirmDel('h')">Xoa phieu nay</button>
+  </div>
+</div>
+
+<!-- NHAP/XUAT KHO FORM -->
+<div class="sc" id="s-kho">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="kTtl">Phieu nhap/xuat</div><div class="tb-sub" id="kSub"></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico gr">&#128202;</div><div class="sec-ttl">Thong tin nhap / xuat kho</div></div>
+    <div class="frow">
+      <span class="flbl">Nhan vien</span>
+      <div class="sdw"><input class="sdi" id="fNV" type="text" placeholder="Ten nhan vien kho..." autocomplete="off"><div class="sdl" id="sdNV"></div></div>
+    </div>
+    <div class="frow" style="flex-direction:column;align-items:flex-start;padding:10px 14px;gap:8px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Kho</span>
+      <div class="khosel-row" id="khoPickRow"></div>
+    </div>
+    <div id="kProdRows"></div>
+    <button class="btnadd" onclick="addKRow()" style="color:var(--gr);">+ Them san pham</button>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="frow"><span class="flbl">Ghi chu</span><input class="finp" id="kNotes" type="text" placeholder="Ghi chu..."></div>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico" style="background:#e8f0fe;color:#1a73e8;">&#128247;</div><div class="sec-ttl">Anh chung tu</div></div>
+    <div style="padding:10px 14px;">
+      <input type="file" id="kAnhInput" accept="image/*" multiple style="display:none" onchange="renderKhoAnhPreview()">
+      <button type="button" class="btnadd" style="color:#1a73e8;width:100%;border:1.5px dashed var(--bd2);border-radius:9px;padding:10px;background:none;" onclick="document.getElementById('kAnhInput').click()">+ Chup / chon anh</button>
+      <div id="kAnhPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+      <div style="font-size:11px;color:var(--mu);margin-top:6px;">Anh tai len Drive khi bam Luu phieu kho. Chon lai = thay toan bo anh.</div>
+    </div>
+  </div>
+  <div class="factions">
+    <button class="btnsave grn" onclick="saveKho()">Luu phieu kho</button>
+    <button class="btndel" id="kDelBtn" style="display:none" onclick="confirmDel('k')">Xoa phieu nay</button>
+  </div>
+</div>
+
+<!-- DON LE FORM -->
+<div class="sc" id="s-dl">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="dlTtl">Don le moi</div><div class="tb-sub" id="dlSub"></div></div>
+  </div>
+
+  <!-- 1. Thong tin khach hang (moved to top) -->
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico pu">&#128100;</div><div class="sec-ttl">Thong tin khach hang</div></div>
+    <div class="frow"><span class="flbl">Ten khach</span><input class="finp" id="dlKhach" type="text" placeholder="Ten khach hang..."></div>
+    <div class="frow"><span class="flbl">SDT</span><input class="finp" id="dlSDT" type="tel" placeholder="So dien thoai..."></div>
+    <div class="frow"><span class="flbl">Dia chi</span><input class="finp" id="dlAddr" type="text" placeholder="Dia chi giao hang..."></div>
+  </div>
+
+  <!-- 2. San pham ban -->
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico pu">&#128722;</div><div class="sec-ttl">San pham ban</div></div>
+    <div class="frow">
+      <span class="flbl">Nhan vien ban</span>
+      <div class="sdw"><input class="sdi" id="dlNV" type="text" placeholder="Ten nhan vien..." autocomplete="off"><div class="sdl" id="sdDlNV"></div></div>
+    </div>
+    <div id="dlProdRows"></div>
+    <button class="btnadd" onclick="addDlRow()" style="color:var(--pu);border-color:var(--pu);">+ Them san pham</button>
+  </div>
+
+  <div class="tot-strip pu">
+    <span class="tot-lbl">Thanh tien</span>
+    <span class="tot-val" id="dlTotal">0 d</span>
+  </div>
+
+  <!-- 3. Thanh toan -->
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico pu">&#128179;</div><div class="sec-ttl">Thanh toan</div></div>
+    <div class="frow" style="flex-direction:column;align-items:flex-start;padding:10px 14px;gap:6px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Tinh trang thanh toan</span>
+      <div class="pay-pick" id="dlPayPick"></div>
+    </div>
+    <div class="frow" style="align-items:flex-start;flex-direction:column;padding:10px 14px;gap:8px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Tien ship</span>
+      <div style="display:flex;align-items:center;gap:8px;width:100%;">
+        <input class="finp" id="dlShip" type="number" inputmode="decimal" placeholder="0" oninput="calcDlTotal()" style="flex:1;font-size:16px;">
+        <span style="font-size:11px;color:var(--mu);">d</span>
+      </div>
+      <div style="display:flex;gap:8px;width:100%;">
+        <button id="shipPillKhach" onclick="setShipOwner('khach')"
+          style="flex:1;padding:8px 6px;border-radius:10px;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--gr);background:var(--gr);color:#fff;">
+          Khach tra (+)</button>
+        <button id="shipPillMinh" onclick="setShipOwner('minh')"
+          style="flex:1;padding:8px 6px;border-radius:10px;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--bd2);background:var(--sf);color:var(--mu);">
+          Minh tra (-)</button>
+      </div>
+      <div id="shipNote" style="font-size:11px;color:var(--gr);font-weight:600;"></div>
+    </div>
+    <div class="frow">
+      <span class="flbl">Ghi chu / Uu dai</span>
+      <input class="finp" id="dlNotes" type="text" placeholder="Vi du: giam 10%...">
+    </div>
+  </div>
+
+  <div class="factions">
+    <button class="btnsave pun" onclick="saveDl()">Luu don le</button>
+    <button class="btndel" id="dlDelBtn" style="display:none" onclick="confirmDel('dl')">Xoa don nay</button>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="sc" id="s-rpt">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">Bao cao ngay</div><div class="tb-sub" id="rptLbl"></div></div>
+    <button class="tb-btn" onclick="copyZaloRpt()">Zalo</button>
+  </div>
+  <div id="rptContent" style="padding-bottom:20px;"></div>
+</div>
+
+<!-- SETTINGS -->
+
+<!-- LICH SU DONG BO -->
+<div class="sc" id="s-hist">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1">
+      <div class="tb-ttl">Lich su dong bo</div>
+      <div class="tb-sub" id="histSub"></div>
+    </div>
+    <button class="tb-btn" onclick="clearHistory()" style="color:var(--re);font-size:12px;">Xoa LS</button>
+  </div>
+  <div id="histContent" style="padding-bottom:30px;"></div>
+</div>
+
+<div class="sc" id="s-set">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div class="tb-ttl">Cai dat</div>
+  </div>
+  <div class="set-wrap">
+    <div class="sec">
+      <div class="sec-hd"><div class="sec-ico">&#128666;</div><div class="sec-ttl">Nguoi giao hang <span class="cbadge" id="ghCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="ghT1" onclick="swTab('gh',1)">Nhap 1 ten</button><button class="itab" id="ghT2" onclick="swTab('gh',2)">Dan danh sach</button></div>
+      <div class="ipanel" id="ghP1"><div class="arow" style="padding:0"><input class="ainp" id="ghAddI" type="text" placeholder="Ten nguoi giao..."><button class="abtn" onclick="addOne('gh')">Them</button></div></div>
+      <div class="ipanel" id="ghP2" style="display:none"><textarea class="bulk-ta" id="ghBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('gh')">Them tat ca</button><button class="btnclr" onclick="clearAll('gh')">Xoa het</button></div></div>
+      <div class="cmng" id="ghMng"></div>
+    </div>
+    <div class="sec" style="margin-top:10px">
+      <div class="sec-hd"><div class="sec-ico">&#128119;</div><div class="sec-ttl">Nhan vien kho <span class="cbadge" id="nvCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="nvT1" onclick="swTab('nv',1)">Nhap 1 ten</button><button class="itab" id="nvT2" onclick="swTab('nv',2)">Dan danh sach</button></div>
+      <div class="ipanel" id="nvP1"><div class="arow" style="padding:0"><input class="ainp" id="nvAddI" type="text" placeholder="Ten nhan vien..."><button class="abtn" onclick="addOne('nv')">Them</button></div></div>
+      <div class="ipanel" id="nvP2" style="display:none"><textarea class="bulk-ta" id="nvBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('nv')">Them tat ca</button><button class="btnclr" onclick="clearAll('nv')">Xoa het</button></div></div>
+      <div class="cmng" id="nvMng"></div>
+    </div>
+    <div class="sec" style="margin-top:10px">
+      <div class="sec-hd"><div class="sec-ico">&#128230;</div><div class="sec-ttl">San pham <span class="cbadge" id="prCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="prT1" onclick="swTab('pr',1)">Nhap 1 ten</button><button class="itab" id="prT2" onclick="swTab('pr',2)">Dan danh sach</button><button class="itab" id="prT3" onclick="swTab('pr',3)">Import file</button></div>
+      <div class="ipanel" id="prP1"><div class="arow" style="padding:0"><input class="ainp" id="prAddI" type="text" placeholder="Ten san pham..."><button class="abtn" onclick="addOne('pr')">Them</button></div></div>
+      <div class="ipanel" id="prP2" style="display:none"><textarea class="bulk-ta" id="prBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('pr')">Them tat ca</button><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
+      <div class="ipanel" id="prP3" style="display:none"><button onclick="document.getElementById('prFile').click()" style="width:100%;padding:10px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Chon file Excel/CSV</button><input type="file" id="prFile" class="finp-file" accept=".xlsx,.xls,.csv" onchange="importFile(this)"><div style="font-size:11px;color:var(--mu);margin-top:5px;">Cot dau = ten san pham</div><div class="ibtns" style="margin-top:8px;"><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
+      <div class="cmng" id="prMng"></div>
+    </div>
+    <!-- Google Sheet -->
+    <div class="sec" style="margin-top:10px;margin-bottom:10px;">
+      <div class="sec-hd"><div class="sec-ico" style="background:#e6f4ea;color:#0f9d58;">&#128209;</div><div class="sec-ttl">Ket noi Google Sheet</div></div>
+      <div style="padding:12px 14px;">
+        <div id="gsStatusBar" style="font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;"></div>
+        <input type="text" id="gsUrlSet" placeholder="https://script.google.com/macros/s/..."
+          style="width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid var(--bd2);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;background:var(--bg);color:var(--tx);margin-bottom:10px;outline:none;box-sizing:border-box;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="saveGsUrlSet()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#0f9d58;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Luu URL</button>
+          <button onclick="window.open(document.getElementById('gsUrlSet').value||getGsUrl(),'_blank')" style="padding:12px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Kiem tra</button>
+          <button onclick="svGsUrl('');renderGsStatus();toast('Da xoa URL');" style="padding:12px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Xoa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="cfOv">
+  <div class="modal">
+    <div class="modal-ttl" id="cfTtl">Xoa?</div>
+    <div class="modal-sub" id="cfBody"></div>
+    <div class="modal-btns">
+      <button class="modal-no" onclick="closeCf()">Huy</button>
+      <button class="modal-yes" id="cfOk">Xoa</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- GG SHEET MODAL -->
+<div class="overlay" id="gsOverlay" onclick="if(event.target===this)closeGS()">
+  <div class="modal">
+    <div class="modal-ttl">Ket noi Google Sheet</div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.6;">Dan URL Google Apps Script vao day de dong bo du lieu.</div>
+    <input type="text" id="gsUrlInp" placeholder="https://script.google.com/macros/s/..."
+      style="width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid var(--bd2);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;background:var(--bg);color:var(--tx);margin-bottom:12px;outline:none;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveGsUrl()" style="flex:1;padding:13px;border-radius:10px;border:none;background:#0f9d58;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Luu & Ket noi</button>
+      <button onclick="closeGS()" style="padding:13px 16px;border-radius:10px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;cursor:pointer;">Huy</button>
+    </div>
+  </div>
+</div>
+<!-- EXCEL MODAL iOS -->
+<div class="overlay" id="xlOv">
+  <div class="modal">
+    <div class="modal-ttl">Luu file Excel</div>
+    <div style="font-size:13px;color:var(--mu);line-height:1.75;margin-bottom:16px;">Nhan Mo file, sau do nhan Share roi chon Save to Files</div>
+    <a id="xlLink" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;padding:14px;border-radius:11px;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;font-weight:600;text-decoration:none;margin-bottom:10px;">Mo file Excel</a>
+    <button onclick="document.getElementById('xlOv').classList.remove('on')" style="width:100%;padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;cursor:pointer;">Dong</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var curDate = todayStr();
+var curTab = 0;
+var editType = null, editId = null;
+var hRows = [], hRd = {};
+var kRows = [], kRd = {}, khoSel = 'Ha Noi';
+var dlRows = [], dlRd = {}, dlEditId = null, dlPaySel = 'Da thanh toan';
+
+function ld(k,d){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function getHangs(dt){return ld('hang_'+dt,[]);}function svHangs(dt,a){sv('hang_'+dt,a);}
+function getKhos(dt){return ld('kho_'+dt,[]);}function svKhos(dt,a){sv('kho_'+dt,a);}
+function getDls(dt){return ld('dl_'+dt,[]);}function svDls(dt,a){sv('dl_'+dt,a);}
+function getGH(){return ld('kho_gh',[]);}function svGH(v){sv('kho_gh',v);}
+function getNV(){return ld('kho_nv',[]);}function svNV(v){sv('kho_nv',v);}
+function getProds(){return ld('prods',[]);}function svProds(v){sv('prods',v);}
+
+var CFG={gh:{get:getGH,save:svGH,mng:'ghMng',cnt:'ghCnt'},nv:{get:getNV,save:svNV,mng:'nvMng',cnt:'nvCnt'},pr:{get:getProds,save:svProds,mng:'prMng',cnt:'prCnt'}};
+var KHO_LIST=['Ha Noi','Thanh Hoa'];
+var HANG_STS=['Mang di','Mang ve','Thu hoi','Tang','Huy'];
+var KHO_STS=['Nhap','Xuat','Tang','Ban','Huy'];
+var PAY_OPT=['Da thanh toan','Chua thanh toan','Thanh toan 1 phan'];
+
+var HANG_CLS={};HANG_CLS['Mang di']='di';HANG_CLS['Mang ve']='ve';HANG_CLS['Thu hoi']='th';HANG_CLS['Tang']='tg';HANG_CLS['Huy']='hy';
+var KHO_CLS={};KHO_CLS['Nhap']='nhap';KHO_CLS['Xuat']='xuat';KHO_CLS['Tang']='tang';KHO_CLS['Ban']='ban';KHO_CLS['Huy']='huy';
+var HANG_BADGE={};HANG_BADGE['Mang di']='b-di';HANG_BADGE['Mang ve']='b-ve';HANG_BADGE['Thu hoi']='b-th';HANG_BADGE['Tang']='b-tg';HANG_BADGE['Huy']='b-hy';
+var KHO_BADGE={};KHO_BADGE['Nhap']='b-nhap';KHO_BADGE['Xuat']='b-xuat';KHO_BADGE['Tang']='b-tang';KHO_BADGE['Ban']='b-ban';KHO_BADGE['Huy']='b-huy';
+var PAY_CLS={};PAY_CLS['Da thanh toan']='paid';PAY_CLS['Chua thanh toan']='unpaid';PAY_CLS['Thanh toan 1 phan']='partial';
+
+function todayStr(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var dd=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+dd;}
+function fmt(n){return Math.round(n).toLocaleString('vi-VN');}
+function uid(){return Date.now()+'-'+Math.random().toString(36).slice(2,6);}
+function fmtD(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function fmtDFull(s){if(!s)return'';var d=new Date(s+'T00:00:00');var days=['CN','T2','T3','T4','T5','T6','T7'];return days[d.getDay()]+', '+fmtD(s);}
+function isIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;}
+
+function go(id){document.querySelectorAll('.sc').forEach(function(s){s.classList.remove('on');});document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
+function goHome(){renderHome();go('s-home');}
+function goSettings(){renderSettings();go('s-set');}
+function goReport(){renderReport();go('s-rpt');}
+
+function switchTab(t){
+  curTab=t;
+  [0,1,2].forEach(function(i){document.getElementById('tn'+i).classList.toggle('on',i===t);});
+  renderHome();
+}
+function renderHome(){
+  document.getElementById('dLbl').textContent=fmtDFull(curDate);
+  document.getElementById('dInp').value=curDate;
+  if(curTab===0) renderHangHome();
+  else if(curTab===1) renderKhoHome();
+  else renderDlHome();
+}
+function onDateChange(){curDate=document.getElementById('dInp').value;renderHome();}
+
+// HANG HOME
+function renderHangHome(){
+  var data=getHangs(curDate);
+  var pills=document.getElementById('homePills');pills.innerHTML='';
+  var p=document.createElement('span');p.className='pill pill-b';p.textContent=data.length+' phieu';pills.appendChild(p);
+  buildList(document.getElementById('homeList'),data,'h');
+}
+// KHO HOME
+function renderKhoHome(){
+  var data=getKhos(curDate);
+  var pills=document.getElementById('homePills');pills.innerHTML='';
+  var hn=data.filter(function(k){return k.kho==='Ha Noi';}).length;
+  var th=data.filter(function(k){return k.kho==='Thanh Hoa';}).length;
+  var p1=document.createElement('span');p1.className='pill pill-g';p1.textContent='HN:'+hn;pills.appendChild(p1);
+  var p2=document.createElement('span');p2.className='pill';p2.style.background='var(--orb)';p2.style.color='var(--or)';p2.textContent='TH:'+th;pills.appendChild(p2);
+  buildList(document.getElementById('homeList'),data,'k');
+}
+// DL HOME
+function renderDlHome(){
+  var data=getDls(curDate);
+  var pills=document.getElementById('homePills');pills.innerHTML='';
+  var total=data.reduce(function(s,d){return s+(d.total||0);},0);
+  var p1=document.createElement('span');p1.className='pill pill-p';p1.textContent=data.length+' don';pills.appendChild(p1);
+  var p2=document.createElement('span');p2.className='pill pill-g';p2.textContent=fmt(total)+'d';pills.appendChild(p2);
+  buildList(document.getElementById('homeList'),data,'dl');
+}
+
+function buildList(el,data,type){
+  el.innerHTML='';
+  if(!data.length){
+    var emp=document.createElement('div');emp.className='empty';
+    var ico=type==='h'?'&#128666;':type==='k'?'&#128202;':'&#128722;';
+    emp.innerHTML='<div class="empty-ico">'+ico+'</div><div class="empty-ttl">Chua co phieu nao</div><div class="empty-sub">Nhan + de them</div>';
+    el.appendChild(emp);return;
+  }
+  data.forEach(function(item,i){
+    var card=document.createElement('div');card.className='ecard';
+    var head=document.createElement('div');head.className='ecard-h';
+    var num=document.createElement('div');num.className='enum';
+    num.style.background=type==='h'?'var(--blb)':type==='k'?'var(--grb)':'var(--pub)';
+    num.style.color=type==='h'?'var(--bl)':type==='k'?'var(--gr)':'var(--pu)';
+    num.textContent=i+1;
+    var meta=document.createElement('div');meta.className='emeta';
+    var t1=document.createElement('div');t1.className='etitle';
+    if(type==='h') t1.textContent=item.gh||'(Chua chon)';
+    else if(type==='k') t1.textContent=(item.nv||'?')+' - Kho '+item.kho;
+    else t1.textContent=(item.khach||'(Khong ten)')+' - '+(item.nv||'');
+    var s1=document.createElement('div');s1.className='esub';
+    s1.textContent=item.products.length+' san pham'+(type==='dl'&&item.total?' | '+fmt(item.total)+'d':'');
+    meta.appendChild(t1);meta.appendChild(s1);
+    head.appendChild(num);head.appendChild(meta);
+    // badges
+    var bw=document.createElement('div');bw.style.display='flex';bw.style.gap='4px';bw.style.flexWrap='wrap';
+    if(type==='dl'){
+      var pb=document.createElement('span');pb.className='badge';
+      var pcl=PAY_CLS[item.payS]||'paid';
+      if(pcl==='paid'){pb.style.background='var(--grb)';pb.style.color='var(--gr)';}
+      else if(pcl==='unpaid'){pb.style.background='var(--reb)';pb.style.color='var(--re)';}
+      else{pb.style.background='var(--amb)';pb.style.color='var(--am)';}
+      pb.textContent=item.payS;bw.appendChild(pb);
+    } else {
+      var clsMap=type==='h'?HANG_BADGE:KHO_BADGE;
+      var stSet={};item.products.forEach(function(p){if(p.st)stSet[p.st]=1;});
+      Object.keys(stSet).forEach(function(st){var b=document.createElement('span');b.className='badge '+(clsMap[st]||'');b.textContent=st;bw.appendChild(b);});
+    }
+    head.appendChild(bw);
+    var body=document.createElement('div');body.className='ecard-b';
+    item.products.forEach(function(p,pi){
+      if(!p.name)return;
+      var sp=document.createElement('span');sp.style.cssText='font-size:12px;color:var(--mu);';
+      sp.textContent=p.name+(p.qty?' x'+p.qty:'');body.appendChild(sp);
+      if(pi<item.products.length-1){var sep=document.createElement('span');sep.style.cssText='font-size:12px;color:var(--bd2);';sep.textContent=' | ';body.appendChild(sep);}
+    });
+    card.appendChild(head);card.appendChild(body);
+    card.onclick=(function(id,tp){return function(){if(tp==='h')openEditHang(id);else if(tp==='k')openEditKho(id);else openEditDl(id);};})(item.id,type);
+    el.appendChild(card);
+  });
+}
+
+function openNew(){if(curTab===0)openNewHang();else if(curTab===1)openNewKho();else openNewDl();}
+
+// HANG FORM
+function openNewHang(){
+  editType='h';editId=null;hRows=[];hRd={};
+  document.getElementById('hTtl').textContent='Phieu hang giao moi';document.getElementById('hSub').textContent=fmtD(curDate);
+  document.getElementById('fGH').value='';document.getElementById('hNotes').value='';document.getElementById('hDelBtn').style.display='none';
+  addHRowSilent();addHRowSilent();renderHRows();setupSD('fGH','sdGH',getGH);go('s-hang');
+}
+function openEditHang(id){
+  var data=getHangs(curDate);var h=data.find(function(v){return v.id===id;});if(!h)return;
+  editType='h';editId=id;hRows=[];hRd={};
+  document.getElementById('hTtl').textContent='Sua phieu hang giao';document.getElementById('hSub').textContent=h.gh||'';
+  document.getElementById('fGH').value=h.gh||'';document.getElementById('hNotes').value=h.notes||'';document.getElementById('hDelBtn').style.display='';
+  var prods=h.products.length?h.products:[{name:'',qty:'',st:'Mang di',hang:'Moi'}];
+  prods.forEach(function(p){var r=uid();hRows.push(r);hRd[r]={name:p.name||'',qty:p.qty||'',st:p.st||'Mang di',hang:p.hang||'Moi'};});
+  renderHRows();setupSD('fGH','sdGH',getGH);go('s-hang');
+}
+function addHRowSilent(){var r=uid();hRows.push(r);hRd[r]={name:'',qty:'',st:'Mang di',hang:'Moi'};}
+function addHRow(){addHRowSilent();renderHRows();}
+function removeHRow(r){if(hRows.length<=1)return toast('Can it nhat 1 san pham');hRows=hRows.filter(function(x){return x!==r;});delete hRd[r];renderHRows();}
+function renderHRows(){var c=document.getElementById('hProdRows');c.innerHTML='';hRows.forEach(function(r,i){c.appendChild(makeRow(r,i,hRd[r],HANG_STS,HANG_CLS,'h'));});}
+function saveHang(){
+  var gh=document.getElementById('fGH').value.trim();if(!gh)return toast('Vui long chon nguoi giao hang');
+  var products=hRows.map(function(r){var d=hRd[r];return{name:d.name.trim(),qty:parseFloat(d.qty)||0,st:d.st||'Mang di',hang:d.hang||'Moi'};}).filter(function(p){return p.name||p.qty;});
+  var h={id:editId||uid(),date:curDate,gh:gh,notes:document.getElementById('hNotes').value.trim(),products:products};
+  var data=getHangs(curDate);
+  if(editId){var idx=data.findIndex(function(v){return v.id===editId;});if(idx>=0)data[idx]=h;}else data.push(h);
+  svHangs(curDate,data);toast(editId?'Da cap nhat':'Da luu phieu hang giao');goHome();
+}
+
+// KHO FORM
+function openNewKho(){
+  editType='k';editId=null;kRows=[];kRd={};khoSel='Ha Noi';
+  document.getElementById('kTtl').textContent='Phieu nhap/xuat moi';document.getElementById('kSub').textContent=fmtD(curDate);
+  document.getElementById('fNV').value='';document.getElementById('kNotes').value='';document.getElementById('kDelBtn').style.display='none';
+  renderKhoPick();addKRowSilent();addKRowSilent();renderKRows();setupSD('fNV','sdNV',getNV);go('s-kho');
+}
+function openEditKho(id){
+  var data=getKhos(curDate);var k=data.find(function(v){return v.id===id;});if(!k)return;
+  editType='k';editId=id;kRows=[];kRd={};khoSel=k.kho||'Ha Noi';
+  document.getElementById('kTtl').textContent='Sua phieu kho';document.getElementById('kSub').textContent=(k.nv||'')+' - '+k.kho;
+  document.getElementById('fNV').value=k.nv||'';document.getElementById('kNotes').value=k.notes||'';document.getElementById('kDelBtn').style.display='';
+  renderKhoPick();
+  var prods=k.products.length?k.products:[{name:'',qty:'',st:'Nhap',hang:'Moi'}];
+  prods.forEach(function(p){var r=uid();kRows.push(r);kRd[r]={name:p.name||'',qty:p.qty||'',st:p.st||'Nhap',hang:p.hang||'Moi'};});
+  renderKRows();setupSD('fNV','sdNV',getNV);go('s-kho');
+}
+function renderKhoPick(){var row=document.getElementById('khoPickRow');row.innerHTML='';KHO_LIST.forEach(function(kk){var btn=document.createElement('button');btn.className='khosel'+(khoSel===kk?' on':'');btn.textContent=kk;btn.onclick=function(){khoSel=kk;renderKhoPick();};row.appendChild(btn);});}
+function addKRowSilent(){var r=uid();kRows.push(r);kRd[r]={name:'',qty:'',st:'Nhap',hang:'Moi'};}
+function addKRow(){addKRowSilent();renderKRows();}
+function removeKRow(r){if(kRows.length<=1)return toast('Can it nhat 1 san pham');kRows=kRows.filter(function(x){return x!==r;});delete kRd[r];renderKRows();}
+function renderKRows(){var c=document.getElementById('kProdRows');c.innerHTML='';kRows.forEach(function(r,i){c.appendChild(makeRow(r,i,kRd[r],KHO_STS,KHO_CLS,'k'));});}
+function saveKho(){
+  var nv=document.getElementById('fNV').value.trim();if(!nv)return toast('Vui long chon nhan vien kho');
+  var products=kRows.map(function(r){var d=kRd[r];return{name:d.name.trim(),qty:parseFloat(d.qty)||0,st:d.st||'Nhap',hang:d.hang||'Moi'};}).filter(function(p){return p.name||p.qty;});
+  var k={id:editId||uid(),date:curDate,nv:nv,kho:khoSel,notes:document.getElementById('kNotes').value.trim(),products:products};
+  var data=getKhos(curDate);
+  if(editId){var idx=data.findIndex(function(v){return v.id===editId;});if(idx>=0)data[idx]=k;}else data.push(k);
+  svKhos(curDate,data);uploadKhoAnh(k);toast(editId?'Da cap nhat':'Da luu phieu kho');goHome();
+}
+
+// DON LE FORM
+function openNewDl(){
+  editType='dl';dlEditId=null;dlRows=[];dlRd={};dlPaySel='Da thanh toan';
+  document.getElementById('dlTtl').textContent='Don le moi';document.getElementById('dlSub').textContent=fmtD(curDate);
+  dlShipOwner='khach';document.getElementById('dlNV').value='';document.getElementById('dlShip').value='';
+  document.getElementById('dlNotes').value='';document.getElementById('dlKhach').value='';
+  document.getElementById('dlSDT').value='';document.getElementById('dlAddr').value='';
+  document.getElementById('dlDelBtn').style.display='none';
+  renderDlPay();addDlRowSilent();addDlRowSilent();renderDlRows();setShipOwner('khach');
+  setupSD('dlNV','sdDlNV',getNV);go('s-dl');
+}
+function openEditDl(id){
+  editType='dl';
+  var data=getDls(curDate);var d=data.find(function(v){return v.id===id;});if(!d)return;
+  dlEditId=id;dlRows=[];dlRd={};dlPaySel=d.payS||'Da thanh toan';
+  document.getElementById('dlTtl').textContent='Sua don le';document.getElementById('dlSub').textContent=d.khach||'';
+  dlShipOwner=d.shipOwner||'khach';document.getElementById('dlNV').value=d.nv||'';document.getElementById('dlShip').value=d.ship||'';
+  document.getElementById('dlNotes').value=d.notes||'';document.getElementById('dlKhach').value=d.khach||'';
+  document.getElementById('dlSDT').value=d.sdt||'';document.getElementById('dlAddr').value=d.addr||'';
+  document.getElementById('dlDelBtn').style.display='';
+  renderDlPay();
+  var prods=d.products.length?d.products:[{name:'',qty:'',price:''}];
+  prods.forEach(function(p){var r=uid();dlRows.push(r);dlRd[r]={name:p.name||'',qty:p.qty||'',price:p.price||''};});
+  renderDlRows();setShipOwner(dlShipOwner);setupSD('dlNV','sdDlNV',getNV);go('s-dl');
+}
+function renderDlPay(){
+  var pick=document.getElementById('dlPayPick');pick.innerHTML='';
+  PAY_OPT.forEach(function(opt){
+    var btn=document.createElement('button');var cl=PAY_CLS[opt]||'paid';
+    btn.className='pp'+(dlPaySel===opt?' on-'+cl:'');btn.textContent=opt;
+    btn.onclick=function(){dlPaySel=opt;pick.querySelectorAll('.pp').forEach(function(b){var bc=PAY_CLS[b.textContent]||'paid';b.className='pp'+(b.textContent===opt?' on-'+bc:'');});};
+    pick.appendChild(btn);
+  });
+}
+function addDlRowSilent(){var r=uid();dlRows.push(r);dlRd[r]={name:'',qty:'',price:''};}
+function addDlRow(){addDlRowSilent();renderDlRows();}
+function removeDlRow(r){if(dlRows.length<=1)return toast('Can it nhat 1 san pham');dlRows=dlRows.filter(function(x){return x!==r;});delete dlRd[r];renderDlRows();calcDlTotal();}
+function renderDlRows(){
+  var c=document.getElementById('dlProdRows');c.innerHTML='';
+  dlRows.forEach(function(r,i){
+    var d=dlRd[r];
+    var div=document.createElement('div');div.className='pitem';div.dataset.r=r;
+    var r1=document.createElement('div');r1.className='pr1';
+    var idx=document.createElement('div');idx.className='pidx';idx.style.background='var(--pub)';idx.style.color='var(--pu)';idx.textContent=i+1;
+    var sdwDiv=document.createElement('div');sdwDiv.className='sdw';sdwDiv.style.flex='1';
+    var nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='Go de tim san pham...';nameInp.autocomplete='off';nameInp.className='pname-inp';nameInp.value=d.name||'';
+    var slId='sdDlP_'+r;
+    var slDiv=document.createElement('div');slDiv.className='sdl';slDiv.id=slId;
+    nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,getProds,this.value,rr);};})(r,d,slId);
+    nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,getProds,dd.name||'',rr);};})(r,d,slId);
+    nameInp.onblur=(function(lid){return function(){setTimeout(function(){var e=document.getElementById(lid);if(e)e.classList.remove('on');},180);};})(slId);
+    sdwDiv.appendChild(nameInp);sdwDiv.appendChild(slDiv);
+    var delBtn=document.createElement('button');delBtn.className='bdel';delBtn.textContent='x';
+    delBtn.onclick=(function(rr){return function(){removeDlRow(rr);};})(r);
+    r1.appendChild(idx);r1.appendChild(sdwDiv);r1.appendChild(delBtn);div.appendChild(r1);
+    // qty + price grid
+    var pr2=document.createElement('div');pr2.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-left:28px;margin-top:8px;';
+    var mQty=document.createElement('div');mQty.className='mini';
+    var lQty=document.createElement('span');lQty.className='mlbl';lQty.textContent='So luong';
+    var iQty=document.createElement('input');iQty.className='qty-inp';iQty.type='number';iQty.inputMode='decimal';iQty.placeholder='0';iQty.value=d.qty||'';
+    iQty.oninput=(function(dd){return function(){dd.qty=this.value;calcDlTotal();};})(d);
+    mQty.appendChild(lQty);mQty.appendChild(iQty);
+    var mPr=document.createElement('div');mPr.className='mini';
+    var lPr=document.createElement('span');lPr.className='mlbl';lPr.textContent='Don gia (d)';
+    var iPr=document.createElement('input');iPr.className='qty-inp';iPr.type='number';iPr.inputMode='decimal';iPr.placeholder='0';iPr.value=d.price||'';
+    iPr.oninput=(function(dd){return function(){dd.price=this.value;calcDlTotal();};})(d);
+    mPr.appendChild(lPr);mPr.appendChild(iPr);
+    pr2.appendChild(mQty);pr2.appendChild(mPr);div.appendChild(pr2);
+    var psub=document.createElement('div');psub.className='psub';psub.style.color='var(--pu)';psub.id='dlsub_'+r;
+    var sub=(parseFloat(d.qty)||0)*(parseFloat(d.price)||0);
+    psub.textContent=sub>0?'= '+fmt(sub)+' d':'';
+    div.appendChild(psub);
+    c.appendChild(div);
+  });
+}
+var dlShipOwner='khach';
+function setShipOwner(who){
+  dlShipOwner=who;
+  var btnK=document.getElementById('shipPillKhach');
+  var btnM=document.getElementById('shipPillMinh');
+  var note=document.getElementById('shipNote');
+  if(who==='khach'){
+    if(btnK){btnK.style.background='var(--gr)';btnK.style.borderColor='var(--gr)';btnK.style.color='#fff';}
+    if(btnM){btnM.style.background='var(--sf)';btnM.style.borderColor='var(--bd2)';btnM.style.color='var(--mu)';}
+    if(note){note.style.color='var(--gr)';note.textContent='Ship cong vao tong tien khach tra';}
+  } else {
+    if(btnK){btnK.style.background='var(--sf)';btnK.style.borderColor='var(--bd2)';btnK.style.color='var(--mu)';}
+    if(btnM){btnM.style.background='var(--re)';btnM.style.borderColor='var(--re)';btnM.style.color='#fff';}
+    if(note){note.style.color='var(--re)';note.textContent='Ship tru khoi doanh thu cua don nay';}
+  }
+  calcDlTotal();
+}
+
+function calcDlTotal(){
+  var prodTotal=dlRows.reduce(function(s,r){return s+(parseFloat(dlRd[r].qty)||0)*(parseFloat(dlRd[r].price)||0);},0);
+  dlRows.forEach(function(r){var sub=(parseFloat(dlRd[r].qty)||0)*(parseFloat(dlRd[r].price)||0);var el=document.getElementById('dlsub_'+r);if(el)el.textContent=sub>0?'= '+fmt(sub)+' d':'';});
+  var ship=parseFloat(document.getElementById('dlShip').value)||0;
+  // Khach tra: tong = san pham + ship | Minh tra: tong = san pham - ship
+  var finalTotal=dlShipOwner==='khach'?prodTotal+ship:prodTotal-ship;
+  document.getElementById('dlTotal').textContent=fmt(Math.max(0,finalTotal))+' d';
+}
+function saveDl(){
+  var nv=document.getElementById('dlNV').value.trim();if(!nv)return toast('Vui long chon nhan vien ban');
+  var products=dlRows.map(function(r){var d=dlRd[r];var q=parseFloat(d.qty)||0;var p=parseFloat(d.price)||0;return{name:d.name.trim(),qty:q,price:p,sub:q*p};}).filter(function(p){return p.name||p.qty||p.price;});
+  var ship=parseFloat(document.getElementById('dlShip').value)||0;
+  var prodTotal=products.reduce(function(s,p){return s+p.sub;},0);
+  // Khach tra: tong = san pham + ship | Minh tra: tong = san pham - ship
+  var finalTotal=dlShipOwner==='khach'?prodTotal+ship:prodTotal-ship;
+  var dl={id:dlEditId||uid(),date:curDate,nv:nv,payS:dlPaySel,ship:ship,shipOwner:dlShipOwner,notes:document.getElementById('dlNotes').value.trim(),khach:document.getElementById('dlKhach').value.trim(),sdt:document.getElementById('dlSDT').value.trim(),addr:document.getElementById('dlAddr').value.trim(),products:products,total:Math.max(0,finalTotal)};
+  var data=getDls(curDate);
+  if(dlEditId){var idx=data.findIndex(function(v){return v.id===dlEditId;});if(idx>=0)data[idx]=dl;}else data.push(dl);
+  svDls(curDate,data);toast(dlEditId?'Da cap nhat':'Da luu don le');goHome();
+}
+
+// MAKE PRODUCT ROW (hang + kho)
+function makeRow(r,i,d,statuses,clsMap,ns){
+  var div=document.createElement('div');div.className='pitem';div.dataset.r=r;
+  var r1=document.createElement('div');r1.className='pr1';
+  var idx=document.createElement('div');idx.className='pidx';idx.textContent=i+1;
+  var sdwDiv=document.createElement('div');sdwDiv.className='sdw';sdwDiv.style.flex='1';
+  var nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='Go de tim san pham...';nameInp.autocomplete='off';nameInp.className='pname-inp';nameInp.value=d.name||'';
+  var slId='sdP_'+r;
+  var slDiv=document.createElement('div');slDiv.className='sdl';slDiv.id=slId;
+  nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,getProds,this.value,rr);};})(r,d,slId);
+  nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,getProds,dd.name||'',rr);};})(r,d,slId);
+  nameInp.onblur=(function(lid){return function(){setTimeout(function(){var e=document.getElementById(lid);if(e)e.classList.remove('on');},180);};})(slId);
+  sdwDiv.appendChild(nameInp);sdwDiv.appendChild(slDiv);
+  var delBtn=document.createElement('button');delBtn.className='bdel';delBtn.textContent='x';
+  delBtn.onclick=(function(rr,n){return function(){if(n==='h')removeHRow(rr);else removeKRow(rr);};})(r,ns);
+  r1.appendChild(idx);r1.appendChild(sdwDiv);r1.appendChild(delBtn);div.appendChild(r1);
+  var stpick=document.createElement('div');stpick.className='stpick';
+  statuses.forEach(function(s){
+    var cl=clsMap[s]||'di';var btn=document.createElement('button');
+    btn.className='psel'+((d.st||statuses[0])===s?' a-'+cl:'');btn.textContent=s;
+    btn.onclick=(function(rr,ss,dd,b,cm){return function(){dd.st=ss;var row=b.closest('.pitem');row.querySelectorAll('.psel').forEach(function(pb){var pst=pb.textContent;var pcl=cm[pst]||'di';pb.className='psel'+(pst===ss?' a-'+pcl:'');});};})(r,s,d,btn,clsMap);
+    stpick.appendChild(btn);
+  });
+  div.appendChild(stpick);
+  var qrow=document.createElement('div');qrow.className='qty-row';
+  var ql=document.createElement('span');ql.className='qty-lbl';ql.textContent='So luong';
+  var qi=document.createElement('input');qi.className='qty-inp';qi.type='number';qi.inputMode='decimal';qi.placeholder='0';qi.value=d.qty||'';
+  qi.oninput=(function(dd){return function(){dd.qty=this.value;};})(d);
+  var mcp=document.createElement('div');mcp.className='mc-pick';
+  ['Moi','Cu'].forEach(function(mc){
+    var btn=document.createElement('button');var acl=mc==='Moi'?'on-moi':'on-cu';
+    btn.className='mc'+((d.hang||'Moi')===mc?' '+acl:'');btn.textContent=mc;
+    btn.onclick=(function(dd,val,b){return function(){dd.hang=val;var wrap=b.closest('.mc-pick');wrap.querySelectorAll('.mc').forEach(function(mb){var mcl=mb.textContent==='Moi'?'on-moi':'on-cu';mb.className='mc'+(mb.textContent===val?' '+mcl:'');});};})(d,mc,btn);
+    mcp.appendChild(btn);
+  });
+  qrow.appendChild(ql);qrow.appendChild(qi);qrow.appendChild(mcp);
+  div.appendChild(qrow);
+  return div;
+}
+
+// SEARCHABLE DROPDOWN
+function sdRender(listId,itemsFn,query,rowId){
+  var el=document.getElementById(listId);if(!el)return;
+  var q=(query||'').trim().toLowerCase();var all=itemsFn();
+  var filtered=q?all.filter(function(v){return v.toLowerCase().indexOf(q)>=0;}):all.slice(0,80);
+  el.innerHTML='';
+  if(!filtered.length&&!q){var e=document.createElement('div');e.className='sd-empty';e.textContent='Chua co du lieu. Them trong Cai dat';el.appendChild(e);}
+  else if(!filtered.length){var e2=document.createElement('div');e2.className='sd-empty';e2.textContent='Khong tim thay';el.appendChild(e2);}
+  else{filtered.forEach(function(v){var opt=document.createElement('div');opt.className='sdo';opt.textContent=v;opt.onmousedown=(function(val){return function(){sdPick(listId,val,rowId);};})(v);el.appendChild(opt);});}
+  if(q&&all.indexOf(query)<0){var add=document.createElement('div');add.className='sd-new';add.textContent='+ Them: '+query;add.onmousedown=(function(val){return function(){if(rowId){var a=getProds();if(a.indexOf(val)<0){a.push(val);svProds(a);}}else{if(listId==='sdGH'){var b=getGH();if(b.indexOf(val)<0){b.push(val);svGH(b);}}else{var c=getNV();if(c.indexOf(val)<0){c.push(val);svNV(c);}}}sdPick(listId,val,rowId);};})(query);el.appendChild(add);}
+  el.classList.add('on');
+  var inp=el.previousElementSibling;if(inp){var rect=inp.getBoundingClientRect();el.style.top=(rect.bottom+4)+'px';}
+}
+function setupSD(inputId,listId,itemsFn){
+  var inp=document.getElementById(inputId);
+  inp.oninput=function(){sdRender(listId,itemsFn,this.value,null);};
+  inp.onfocus=function(){sdRender(listId,itemsFn,this.value,null);};
+  inp.onblur=function(){setTimeout(function(){var e=document.getElementById(listId);if(e)e.classList.remove('on');},180);};
+}
+function sdPick(listId,val,rowId){
+  var el=document.getElementById(listId);if(el)el.classList.remove('on');
+  if(rowId){
+    var rd=editType==='h'?hRd:editType==='k'?kRd:editType==='dl'?dlRd:dlRd;
+    if(rd[rowId]!==undefined){rd[rowId].name=val;var row=document.querySelector('[data-r="'+rowId+'"]');if(row){var inp=row.querySelector('.pname-inp,.sdi');if(inp)inp.value=val;}}
+  } else {
+    var prev=el?el.previousElementSibling:null;if(prev&&prev.tagName==='INPUT')prev.value=val;
+  }
+}
+
+// DELETE
+function confirmDel(type){
+  var name=type==='h'?(document.getElementById('fGH').value||'Phieu nay'):type==='k'?(document.getElementById('fNV').value+' - Kho '+khoSel):(document.getElementById('dlKhach').value||'Don nay');
+  document.getElementById('cfTtl').textContent='Xoa phieu?';document.getElementById('cfBody').textContent=name+' se bi xoa.';
+  document.getElementById('cfOk').onclick=function(){
+    if(type==='h') svHangs(curDate,getHangs(curDate).filter(function(v){return v.id!==editId;}));
+    else if(type==='k') svKhos(curDate,getKhos(curDate).filter(function(v){return v.id!==editId;}));
+    else svDls(curDate,getDls(curDate).filter(function(v){return v.id!==dlEditId;}));
+    closeCf();toast('Da xoa');goHome();
+  };
+  document.getElementById('cfOv').classList.add('on');
+}
+function closeCf(){document.getElementById('cfOv').classList.remove('on');}
+
+// REPORT
+function getRptData(dt){
+  // Lay du lieu bao cao: uu tien data dang co trong app
+  // Neu da sync (app trong) thi lay tu lich su
+  var hangs=getHangs(dt);
+  var khos=getKhos(dt);
+  var dls=getDls(dt);
+  // Neu ca 3 deu trong, kiem tra trong lich su
+  if(!hangs.length&&!khos.length&&!dls.length){
+    var hist=ld('kho_sync_history',[]);
+    var h=hist.find(function(x){return x.ngay===dt;});
+    if(h){
+      hangs=h.hangs||[];
+      khos=h.khos||[];
+      dls=h.dls||[];
+    }
+  }
+  // Neu chi mot phan bi sync, gop ca 2 nguon
+  else{
+    var hist2=ld('kho_sync_history',[]);
+    var h2=hist2.find(function(x){return x.ngay===dt;});
+    if(h2){
+      // Them tu lich su nhung tranh trung id
+      var hIds=hangs.map(function(x){return x.id;});
+      var kIds=khos.map(function(x){return x.id;});
+      var dIds=dls.map(function(x){return x.id;});
+      (h2.hangs||[]).forEach(function(v){if(hIds.indexOf(v.id)<0)hangs.push(v);});
+      (h2.khos||[]).forEach(function(v){if(kIds.indexOf(v.id)<0)khos.push(v);});
+      (h2.dls||[]).forEach(function(v){if(dIds.indexOf(v.id)<0)dls.push(v);});
+    }
+  }
+  return{hangs:hangs,khos:khos,dls:dls};
+}
+
+function renderReport(){
+  document.getElementById('rptLbl').textContent=fmtDFull(curDate);
+  var el=document.getElementById('rptContent');el.innerHTML='';
+  var rpt=getRptData(curDate);
+  var hangs=rpt.hangs;
+  var khos=rpt.khos;
+  var dls=rpt.dls;
+
+  // ── Build unified product stock map ──
+  // stockMap[prod] = { nhap, xuat_kho, ban_le, ton }
+  var stockMap={};
+  function ensureStock(p){if(!stockMap[p])stockMap[p]={nhap:0,xuat_kho:0,ban_le:0};}
+  khos.forEach(function(k){k.products.forEach(function(p){if(!p.name)return;ensureStock(p.name);var q=p.qty||0;if(p.st==='Nhap')stockMap[p.name].nhap+=q;else stockMap[p.name].xuat_kho+=q;});});
+  dls.forEach(function(d){d.products.forEach(function(p){if(!p.name)return;ensureStock(p.name);stockMap[p.name].ban_le+=(p.qty||0);});});
+
+  // ── Section 1: Hang giao ──
+  var c1=document.createElement('div');c1.className='rpt-card';
+  var h1=document.createElement('div');h1.className='rpt-hd';h1.textContent='Hang giao - Mang di / Mang ve / Thu hoi';c1.appendChild(h1);
+  if(!hangs.length){var e1=document.createElement('div');e1.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e1.textContent='Chua co phieu hang giao';c1.appendChild(e1);}
+  else{
+    var ghMap={};
+    hangs.forEach(function(h){var g=h.gh||'?';if(!ghMap[g])ghMap[g]={};h.products.forEach(function(p){if(!p.name)return;if(!ghMap[g][p.name])ghMap[g][p.name]={'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};ghMap[g][p.name][p.st]=(ghMap[g][p.name][p.st]||0)+(p.qty||0);});});
+    Object.keys(ghMap).forEach(function(g){
+      var gHd=document.createElement('div');gHd.className='rpt-sub-hd blue';gHd.textContent=g;c1.appendChild(gHd);
+      var cHd=document.createElement('div');cHd.className='rpt-col-hd';
+      cHd.innerHTML='<span style="flex:1;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;">San pham</span><span class="rpt-lbl" style="color:var(--bl);">Di</span><span class="rpt-lbl" style="color:var(--or);">Ve</span><span class="rpt-lbl" style="color:var(--pu);">TH</span><span class="rpt-lbl" style="color:var(--am);">Tang</span><span class="rpt-lbl" style="color:var(--re);">Huy</span>';
+      c1.appendChild(cHd);
+      Object.keys(ghMap[g]).forEach(function(prod){
+        var v=ghMap[g][prod];var row=document.createElement('div');row.className='rpt-row';
+        var nm=document.createElement('span');nm.className='rpt-name';nm.textContent=prod;
+        function mkV(val,color){var sp=document.createElement('span');sp.className='rpt-v';sp.style.color=color;sp.textContent=fmt(val||0);return sp;}
+        row.appendChild(nm);row.appendChild(mkV(v['Mang di'],'var(--bl)'));row.appendChild(mkV(v['Mang ve'],'var(--or)'));row.appendChild(mkV(v['Thu hoi'],'var(--pu)'));row.appendChild(mkV(v['Tang'],'var(--am)'));row.appendChild(mkV(v['Huy'],'var(--re)'));
+        c1.appendChild(row);
+      });
+    });
+  }
+  el.appendChild(c1);
+
+  // ── Section 2: Kho nhap/xuat theo NV ──
+  var c2=document.createElement('div');c2.className='rpt-card';
+  var h2=document.createElement('div');h2.className='rpt-hd';h2.textContent='Nhap / Xuat kho (theo nhan vien)';c2.appendChild(h2);
+  if(!khos.length){var e2=document.createElement('div');e2.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e2.textContent='Chua co phieu nhap/xuat';c2.appendChild(e2);}
+  else{
+    var kg={};
+    khos.forEach(function(k){var kn=k.kho||'?';var nv=k.nv||'?';if(!kg[kn])kg[kn]={};if(!kg[kn][nv])kg[kn][nv]={};k.products.forEach(function(p){if(!p.name)return;if(!kg[kn][nv][p.name])kg[kn][nv][p.name]={nhap:0,xuat:0};var q=p.qty||0;if(p.st==='Nhap')kg[kn][nv][p.name].nhap+=q;else kg[kn][nv][p.name].xuat+=q;});});
+    Object.keys(kg).forEach(function(kn){
+      var kHd=document.createElement('div');kHd.className='rpt-sub-hd green';kHd.textContent='Kho '+kn;c2.appendChild(kHd);
+      var kTot={nhap:0,xuat:0};
+      Object.keys(kg[kn]).forEach(function(nv){
+        var nvHd=document.createElement('div');nvHd.className='rpt-nv-hd';nvHd.textContent=nv;c2.appendChild(nvHd);
+        var cHd2=document.createElement('div');cHd2.className='rpt-col-hd';
+        cHd2.innerHTML='<span style="flex:1;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;">San pham</span><span class="rpt-lbl" style="color:var(--gr);">Nhap</span><span class="rpt-lbl" style="color:var(--re);">Xuat</span><span class="rpt-lbl">Ton</span>';
+        c2.appendChild(cHd2);
+        var nvTot={nhap:0,xuat:0};
+        Object.keys(kg[kn][nv]).forEach(function(prod){
+          var v=kg[kn][nv][prod];var ton=v.nhap-v.xuat;nvTot.nhap+=v.nhap;nvTot.xuat+=v.xuat;
+          var row=document.createElement('div');row.className='rpt-row';
+          var nm=document.createElement('span');nm.className='rpt-name';nm.textContent=prod;
+          var nh=document.createElement('span');nh.className='rpt-v';nh.style.color='var(--gr)';nh.textContent=fmt(v.nhap);
+          var xu=document.createElement('span');xu.className='rpt-v';xu.style.color='var(--re)';xu.textContent=fmt(v.xuat);
+          var tn=document.createElement('span');tn.className='rpt-v';tn.style.fontWeight='700';tn.style.color=ton<0?'var(--re)':ton>0?'var(--gr)':'var(--mu)';tn.textContent=(ton>=0?'+':'')+fmt(ton);
+          row.appendChild(nm);row.appendChild(nh);row.appendChild(xu);row.appendChild(tn);c2.appendChild(row);
+        });
+        kTot.nhap+=nvTot.nhap;kTot.xuat+=nvTot.xuat;
+        var nvSub=document.createElement('div');nvSub.className='rpt-nv-sub';
+        var nvL=document.createElement('span');nvL.style.cssText='flex:1;font-size:11px;font-weight:600;color:var(--mu);';nvL.textContent=nv;
+        var nvN=document.createElement('span');nvN.style.cssText='font-size:12px;font-weight:600;color:var(--gr);min-width:46px;text-align:right;';nvN.textContent='N:'+fmt(nvTot.nhap);
+        var nvX=document.createElement('span');nvX.style.cssText='font-size:12px;font-weight:600;color:var(--re);min-width:46px;text-align:right;';nvX.textContent='X:'+fmt(nvTot.xuat);
+        var nvTon=nvTot.nhap-nvTot.xuat;var nvT=document.createElement('span');nvT.style.cssText='font-size:12px;font-weight:700;min-width:56px;text-align:right;color:'+(nvTon<0?'var(--re)':'var(--gr)')+';';nvT.textContent=(nvTon>=0?'+':'')+fmt(nvTon);
+        nvSub.appendChild(nvL);nvSub.appendChild(nvN);nvSub.appendChild(nvX);nvSub.appendChild(nvT);c2.appendChild(nvSub);
+      });
+      var tot=document.createElement('div');tot.className='rpt-tot';
+      var tl=document.createElement('span');tl.className='rpt-tot-lbl';tl.textContent='Tong kho '+kn;
+      var tn2=document.createElement('span');tn2.className='rpt-tot-v';tn2.style.color='var(--gr)';tn2.style.minWidth='46px';tn2.style.textAlign='right';tn2.textContent='N:'+fmt(kTot.nhap);
+      var tx2=document.createElement('span');tx2.className='rpt-tot-v';tx2.style.color='var(--re)';tx2.style.minWidth='46px';tx2.style.textAlign='right';tx2.textContent='X:'+fmt(kTot.xuat);
+      var tv=kTot.nhap-kTot.xuat;var tt2=document.createElement('span');tt2.className='rpt-tot-v';tt2.style.minWidth='56px';tt2.style.textAlign='right';tt2.style.color=tv<0?'var(--re)':'var(--gr)';tt2.textContent='T:'+(tv>=0?'+':'')+fmt(tv);
+      tot.appendChild(tl);tot.appendChild(tn2);tot.appendChild(tx2);tot.appendChild(tt2);c2.appendChild(tot);
+    });
+  }
+  el.appendChild(c2);
+
+  // ── Section 3: Don le ──
+  var c3=document.createElement('div');c3.className='rpt-card';
+  var h3=document.createElement('div');h3.className='rpt-hd';h3.textContent='Don le - Doanh thu';c3.appendChild(h3);
+  if(!dls.length){var e3=document.createElement('div');e3.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e3.textContent='Chua co don le';c3.appendChild(e3);}
+  else{
+    var dlTtl=dls.reduce(function(s,d){return s+d.total;},0);
+    var dlPaid=dls.filter(function(d){return d.payS==='Da thanh toan';}).reduce(function(s,d){return s+d.total;},0);
+    var dlUnpaid=dlTtl-dlPaid;
+    var boxes=document.createElement('div');boxes.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;';
+    function mkBox(lbl,val,color){var b=document.createElement('div');b.style.cssText='background:var(--bg);border-radius:9px;padding:10px 12px;';var vEl=document.createElement('div');vEl.style.cssText='font-size:17px;font-weight:700;color:'+color+';';vEl.textContent=typeof val==='number'?fmt(val)+'d':val;var lEl=document.createElement('div');lEl.style.cssText='font-size:11px;color:var(--mu);margin-top:2px;';lEl.textContent=lbl;b.appendChild(vEl);b.appendChild(lEl);return b;}
+    boxes.appendChild(mkBox(dls.length+' don',fmt(dlTtl)+'d','var(--pu)'));
+    boxes.appendChild(mkBox('Da thanh toan',dlPaid,'var(--gr)'));
+    boxes.appendChild(mkBox('Chua thanh toan',dlUnpaid,'var(--re)'));
+    // Top selling products from don le
+    var dlProdMap={};
+    dls.forEach(function(d){d.products.forEach(function(p){if(!p.name)return;if(!dlProdMap[p.name])dlProdMap[p.name]={qty:0,rev:0};dlProdMap[p.name].qty+=(p.qty||0);dlProdMap[p.name].rev+=(p.sub||0);});});
+    boxes.appendChild(mkBox(Object.keys(dlProdMap).length+' ma hang','','var(--bl)'));
+    c3.appendChild(boxes);
+    if(Object.keys(dlProdMap).length){
+      var cHd3=document.createElement('div');cHd3.className='rpt-col-hd';
+      cHd3.innerHTML='<span style="flex:1;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;">San pham</span><span class="rpt-lbl" style="color:var(--pu);">SL ban</span><span class="rpt-lbl" style="color:var(--gr);">Doanh thu</span>';
+      c3.appendChild(cHd3);
+      Object.keys(dlProdMap).forEach(function(prod){
+        var v=dlProdMap[prod];var row=document.createElement('div');row.className='rpt-row';
+        var nm=document.createElement('span');nm.className='rpt-name';nm.textContent=prod;
+        var sl=document.createElement('span');sl.className='rpt-v';sl.style.color='var(--pu)';sl.textContent=fmt(v.qty);
+        var rv=document.createElement('span');rv.className='rpt-v';rv.style.color='var(--gr)';rv.textContent=fmt(v.rev)+'d';
+        row.appendChild(nm);row.appendChild(sl);row.appendChild(rv);c3.appendChild(row);
+      });
+    }
+  }
+  el.appendChild(c3);
+
+  // ── Section 4: TON CUOI NGAY (Nhap - Xuat kho - Ban le) ──
+  var c4=document.createElement('div');c4.className='rpt-card';
+  var h4=document.createElement('div');h4.className='rpt-hd';
+  h4.style.cssText='padding:11px 14px;background:linear-gradient(90deg,var(--gr),#155e34);color:#fff;font-size:13px;font-weight:600;';
+  h4.textContent='Ton cuoi ngay = Nhap - Xuat kho - Ban le';c4.appendChild(h4);
+  var hasStock=Object.keys(stockMap).length>0;
+  if(!hasStock){
+    var e4=document.createElement('div');e4.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e4.textContent='Chua co du lieu nhap kho hoac ban hang';c4.appendChild(e4);
+  } else {
+    var colHd4=document.createElement('div');colHd4.className='rpt-col-hd';
+    colHd4.innerHTML='<span style="flex:1;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;">San pham</span><span class="rpt-lbl" style="color:var(--gr);">Nhap</span><span class="rpt-lbl" style="color:var(--re);">Xuat</span><span class="rpt-lbl" style="color:var(--pu);">Ban</span><span class="rpt-lbl" style="font-weight:700;color:var(--tx);">Ton</span>';
+    c4.appendChild(colHd4);
+    var totNhap=0,totXuat=0,totBan=0;
+    Object.keys(stockMap).sort().forEach(function(prod){
+      var v=stockMap[prod];
+      var ton=v.nhap-v.xuat_kho-v.ban_le;
+      totNhap+=v.nhap;totXuat+=v.xuat_kho;totBan+=v.ban_le;
+      var row=document.createElement('div');row.className='rpt-row';
+      var nm=document.createElement('span');nm.className='rpt-name';nm.textContent=prod;
+      var nh=document.createElement('span');nh.className='rpt-v';nh.style.color='var(--gr)';nh.textContent=fmt(v.nhap);
+      var xu=document.createElement('span');xu.className='rpt-v';xu.style.color='var(--re)';xu.textContent=fmt(v.xuat_kho);
+      var bn=document.createElement('span');bn.className='rpt-v';bn.style.color='var(--pu)';bn.textContent=fmt(v.ban_le);
+      var tn=document.createElement('span');tn.className='rpt-v';tn.style.fontWeight='800';tn.style.fontSize='14px';
+      tn.style.color=ton<0?'var(--re)':ton>0?'var(--gr)':'var(--mu)';
+      tn.textContent=(ton>=0?'+':'')+fmt(ton);
+      row.appendChild(nm);row.appendChild(nh);row.appendChild(xu);row.appendChild(bn);row.appendChild(tn);
+      c4.appendChild(row);
+    });
+    var totRow=document.createElement('div');totRow.className='rpt-tot';
+    var totLbl=document.createElement('span');totLbl.className='rpt-tot-lbl';totLbl.textContent='Tong cong';
+    var tN=document.createElement('span');tN.className='rpt-tot-v';tN.style.color='var(--gr)';tN.style.minWidth='46px';tN.style.textAlign='right';tN.textContent=fmt(totNhap);
+    var tX=document.createElement('span');tX.className='rpt-tot-v';tX.style.color='var(--re)';tX.style.minWidth='46px';tX.style.textAlign='right';tX.textContent=fmt(totXuat);
+    var tB=document.createElement('span');tB.className='rpt-tot-v';tB.style.color='var(--pu)';tB.style.minWidth='46px';tB.style.textAlign='right';tB.textContent=fmt(totBan);
+    var tT=totNhap-totXuat-totBan;
+    var tTEl=document.createElement('span');tTEl.className='rpt-tot-v';tTEl.style.minWidth='56px';tTEl.style.textAlign='right';tTEl.style.fontWeight='800';tTEl.style.color=tT<0?'var(--re)':'var(--gr)';tTEl.textContent=(tT>=0?'+':'')+fmt(tT);
+    totRow.appendChild(totLbl);totRow.appendChild(tN);totRow.appendChild(tX);totRow.appendChild(tB);totRow.appendChild(tTEl);
+    c4.appendChild(totRow);
+  }
+  el.appendChild(c4);
+}
+
+// ZALO
+function copyZalo(){if(curTab===0)copyZaloH();else if(curTab===1)copyZaloK();else copyZaloDl();}
+function copyZaloH(){var data=getHangs(curDate);if(!data.length)return toast('Chua co phieu');var m='HANG GIAO NGAY '+fmtD(curDate)+'\n--------\n';data.forEach(function(h,i){m+=(i+1)+'. '+h.gh+'\n';h.products.forEach(function(p){if(p.name)m+='  ['+p.st+']['+p.hang+'] '+p.name+(p.qty?' x'+p.qty:'')+'\n';});if(h.notes)m+='  '+h.notes+'\n';});doCopy(m);}
+function copyZaloK(){var data=getKhos(curDate);if(!data.length)return toast('Chua co phieu');var m='NHAP/XUAT KHO NGAY '+fmtD(curDate)+'\n--------\n';data.forEach(function(k,i){m+=(i+1)+'. '+k.nv+' - Kho '+k.kho+'\n';k.products.forEach(function(p){if(p.name)m+='  ['+p.st+']['+p.hang+'] '+p.name+(p.qty?' x'+p.qty:'')+'\n';});if(k.notes)m+='  '+k.notes+'\n';});doCopy(m);}
+function copyZaloDl(){var data=getDls(curDate);if(!data.length)return toast('Chua co don le');var m='DON LE NGAY '+fmtD(curDate)+'\n--------\n';data.forEach(function(d,i){m+=(i+1)+'. '+(d.khach||'?')+(d.sdt?' - '+d.sdt:'')+'\n  NV: '+d.nv+' | '+d.payS+'\n';d.products.forEach(function(p){if(p.name)m+='  '+p.name+' x'+p.qty+' x'+fmt(p.price)+'d = '+fmt(p.sub)+'d\n';});if(d.ship)m+='  Ship: '+fmt(d.ship)+'d\n';m+='  Tong: '+fmt(d.total)+'d\n';if(d.notes)m+='  Uu dai: '+d.notes+'\n';if(d.addr)m+='  DC: '+d.addr+'\n';});doCopy(m);}
+function copyZaloRpt(){
+  var rpt2=getRptData(curDate);var hangs=rpt2.hangs;var khos=rpt2.khos;var dls=rpt2.dls;
+  var m='BAO CAO KHO NGAY '+fmtD(curDate)+'\n========\n';
+  m+='HANG GIAO:\n';
+  if(!hangs.length){m+='(Chua co)\n';}
+  else{var gm={};hangs.forEach(function(h){var g=h.gh||'?';if(!gm[g])gm[g]={};h.products.forEach(function(p){if(!p.name)return;if(!gm[g][p.name])gm[g][p.name]={'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};gm[g][p.name][p.st]=(gm[g][p.name][p.st]||0)+(p.qty||0);});});Object.keys(gm).forEach(function(g){m+='  '+g+'\n';Object.keys(gm[g]).forEach(function(pr){var v=gm[g][pr];m+='    '+pr+': Di '+fmt(v['Mang di']||0)+' Ve '+fmt(v['Mang ve']||0)+(v['Thu hoi']>0?' TH '+fmt(v['Thu hoi']):'')+(v['Tang']>0?' Tang '+fmt(v['Tang']):'')+(v['Huy']>0?' Huy '+fmt(v['Huy']):'')+'\n';});});}
+  m+='TONG KHO:\n';
+  if(!khos.length){m+='(Chua co)\n';}
+  else{var kg2={};khos.forEach(function(k){var kn=k.kho||'?';if(!kg2[kn])kg2[kn]={};k.products.forEach(function(p){if(!p.name)return;if(!kg2[kn][p.name])kg2[kn][p.name]={nhap:0,xuat:0};if(p.st==='Nhap')kg2[kn][p.name].nhap+=(p.qty||0);else kg2[kn][p.name].xuat+=(p.qty||0);});});Object.keys(kg2).forEach(function(kn){m+='  Kho '+kn+'\n';Object.keys(kg2[kn]).forEach(function(pr){var v=kg2[kn][pr];m+='    '+pr+': N+'+fmt(v.nhap)+' X-'+fmt(v.xuat)+' = '+fmt(v.nhap-v.xuat)+'\n';});});}
+  m+='DON LE: '+dls.length+' don | '+fmt(dls.reduce(function(s,d){return s+d.total;},0))+'d';
+  doCopy(m);
+}
+function doCopy(txt){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast('Da sao chep!');}).catch(function(){fbCopy(txt);});}else{fbCopy(txt);}}
+function fbCopy(txt){var ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;top:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');toast('Da sao chep!');}catch(e){toast('Khong copy duoc');}document.body.removeChild(ta);}
+
+// EXCEL
+
+// SETTINGS
+function swTab(k,n){[1,2,3].forEach(function(i){var t=document.getElementById(k+'T'+i);var p=document.getElementById(k+'P'+i);if(t)t.classList.toggle('on',i===n);if(p)p.style.display=i===n?'':'none';});}
+function renderSettings(){renderGsStatus();['gh','nv','pr'].forEach(function(k){var list=CFG[k].get();document.getElementById(CFG[k].cnt).textContent=list.length;var mng=document.getElementById(CFG[k].mng);mng.innerHTML='';list.forEach(function(v,i){var cx=document.createElement('div');cx.className='cx';var sp=document.createElement('span');sp.textContent=v;var del=document.createElement('span');del.className='cxd';del.textContent='x';del.onclick=(function(kk,ii){return function(){var a=CFG[kk].get();a.splice(ii,1);CFG[kk].save(a);renderSettings();};})(k,i);cx.appendChild(sp);cx.appendChild(del);mng.appendChild(cx);});});}
+function addOne(k){var inp=document.getElementById(k+'AddI');var v=inp.value.trim();if(!v)return;var a=CFG[k].get();if(a.indexOf(v)<0){a.push(v);CFG[k].save(a);}inp.value='';renderSettings();toast('Da them: '+v);}
+function bulkAdd(k){var ta=document.getElementById(k+'Bulk');var lines=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);if(!lines.length)return toast('Chua co du lieu');var a=CFG[k].get();var added=0;lines.forEach(function(v){if(a.indexOf(v)<0){a.push(v);added++;}});CFG[k].save(a);ta.value='';renderSettings();toast('Them '+added+' muc');}
+function clearAll(k){CFG[k].save([]);renderSettings();toast('Da xoa toan bo');}
+function importFile(input){var file=input.files[0];if(!file)return;var reader=new FileReader();var isCSV=file.name.toLowerCase().endsWith('.csv');reader.onload=function(e){var names=[];if(isCSV){names=e.target.result.split('\n').map(function(r){return r.split(',')[0].replace(/^"|"$/g,'').trim();}).filter(Boolean);}else{var wb2=XLSX.read(e.target.result,{type:'array'});var ws2=wb2.Sheets[wb2.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws2,{header:1});names=data.map(function(r){return String(r[0]||'').trim();}).filter(Boolean);}if(!names.length)return toast('Khong tim thay du lieu');var a=getProds();var added=0;names.forEach(function(v){if(v&&a.indexOf(v)<0){a.push(v);added++;}});svProds(a);input.value='';renderSettings();toast('Nhap '+added+' san pham');};if(isCSV)reader.readAsText(file,'utf-8');else reader.readAsArrayBuffer(file);}
+
+// ══ GOOGLE SHEET ══
+function getGsUrl(){return ld('kho_gs_url','');}
+function svGsUrl(v){sv('kho_gs_url',v);}
+var _gsPending=false;
+
+function pushToSheet(){
+  var url=getGsUrl();
+  if(!url){
+    document.getElementById('gsUrlInp').value='';
+    document.getElementById('gsOverlay').classList.add('on');
+    _gsPending=true;
+    return;
+  }
+  _doPush(url);
+}
+
+function saveGsUrl(){
+  var url=document.getElementById('gsUrlInp').value.trim();
+  if(!url)return toast('Vui long dan URL');
+  if(url.indexOf('script.google.com')<0)return toast('URL khong dung');
+  svGsUrl(url);closeGS();renderGsStatus();
+  toast('Da luu URL');
+  if(_gsPending){_gsPending=false;_doPush(url);}
+}
+
+function saveGsUrlSet(){
+  var url=document.getElementById('gsUrlSet').value.trim();
+  if(!url)return toast('Vui long dan URL');
+  if(url.indexOf('script.google.com')<0)return toast('URL khong dung');
+  svGsUrl(url);renderGsStatus();toast('Da luu URL Google Sheet');
+}
+
+function closeGS(){document.getElementById('gsOverlay').classList.remove('on');}
+
+function renderGsStatus(){
+  var url=getGsUrl();
+  var bar=document.getElementById('gsStatusBar');
+  var inp=document.getElementById('gsUrlSet');
+  if(!bar||!inp)return;
+  inp.value=url;
+  if(url){
+    bar.style.background='#e6f4ea';bar.style.color='#0f9d58';
+    bar.textContent='Da ket noi: ...'+url.slice(-30);
+  } else {
+    bar.style.background='var(--reb)';bar.style.color='var(--re)';
+    bar.textContent='Chua co URL — chua the dong bo';
+  }
+}
+
+function _doPush(url){
+  var ngay=curDate;
+  var device=ld('device_id','');
+  if(!device){device='KHO_'+Date.now().toString(36).toUpperCase();sv('device_id',device);}
+  var dot=document.getElementById('gsDot');
+  if(dot)dot.className='gs-dot syncing';
+  toast('Dang gui len Sheet...');
+
+  // Lay du lieu ca 3 tab
+  var hangs=getHangs(ngay);
+  var khos=getKhos(ngay);
+  var dls=getDls(ngay);
+  var total=hangs.length+khos.length+dls.length;
+  if(!total){if(dot)dot.className='gs-dot';return toast('Chua co du lieu nao trong ngay nay');}
+
+  // HEADERS (17 cols, Apps Script them Thiet bi + Sync_time thanh 19):
+  // inv_id | row_id | Ngay | Loai | Nhan vien | San pham | Tinh trang | Moi Cu
+  // | So luong | Kho | Ghi chu | Don gia | Thanh tien SP | Tong don | Ship | Ship owner | Thanh toan
+  var rows=[];
+  // Hang giao — 17 cols (cols 12-17 rong)
+  hangs.forEach(function(h){
+    var prods=h.products.filter(function(p){return p.name||p.qty;});
+    if(!prods.length){
+      rows.push([h.id,h.id+'_0',ngay,'HangGiao',h.gh,'','Mang di','Moi',0,'',h.notes||'','','','','','','','','','']);
+    } else {
+      prods.forEach(function(p,pi){
+        rows.push([h.id,h.id+'_'+pi,ngay,'HangGiao',h.gh,p.name,p.st||'Mang di',p.hang||'Moi',p.qty||0,'',pi===0?h.notes||'':'','','','','','','','','','']);
+      });
+    }
+  });
+  // Nhap/Xuat kho — 17 cols (cols 12-17 rong)
+  khos.forEach(function(k){
+    var prods=k.products.filter(function(p){return p.name||p.qty;});
+    if(!prods.length){
+      rows.push([k.id,k.id+'_0',ngay,'NhapXuat',k.nv,'','Nhap','Moi',0,k.kho||'',k.notes||'','','','','','','','','','']);
+    } else {
+      prods.forEach(function(p,pi){
+        rows.push([k.id,k.id+'_'+pi,ngay,'NhapXuat',k.nv,p.name,p.st||'Nhap',p.hang||'Moi',p.qty||0,k.kho||'',pi===0?k.notes||'':'','','','','','','','','','']);
+      });
+    }
+  });
+  // Don le — 17 cols day du
+  dls.forEach(function(d){
+    var prods=d.products.filter(function(p){return p.name;});
+    if(!prods.length){
+      rows.push([d.id,d.id+'_0',ngay,'DonLe',d.nv,'','Ban','',0,'',
+        d.notes||'',
+        0,                    // Don gia
+        0,                    // Thanh tien SP
+        d.total||0,           // Tong don
+        d.ship||0,            // Ship
+        d.shipOwner||'khach', // Ship owner
+        d.payS||'',           // Thanh toan
+        d.khach||'',          // Ten khach
+        d.sdt||'',            // SDT
+        d.addr||''            // Dia chi
+      ]);
+    } else {
+      prods.forEach(function(p,pi){
+        rows.push([
+          d.id, d.id+'_'+pi, ngay, 'DonLe', d.nv,
+          p.name, 'Ban', '', p.qty||0, '',
+          pi===0?d.notes||'':'',           // Ghi chu
+          p.price||0,                        // Don gia
+          p.sub||0,                          // Thanh tien SP
+          pi===0?d.total||0:'',              // Tong don
+          pi===0?d.ship||0:'',               // Ship
+          pi===0?d.shipOwner||'khach':'',    // Ship owner
+          pi===0?d.payS||'':'',              // Thanh toan
+          pi===0?d.khach||'':'',             // Ten khach
+          pi===0?d.sdt||'':'',               // SDT
+          pi===0?d.addr||'':''               // Dia chi
+        ]);
+      });
+    }
+  });
+
+  var payload=JSON.stringify({loai:'kho',ngay:ngay,device:device,rows:rows});
+  fetch(url,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:payload
+  }).then(function(){
+    if(dot)dot.className='gs-dot';
+    // Luu vao lich su
+    _archiveData(ngay,hangs,khos,dls);
+    // Clear khoi danh sach chinh
+    svHangs(ngay,[]);svKhos(ngay,[]);svDls(ngay,[]);
+    renderHome();
+    toast('Da dong bo & luu lich su!');
+  }).catch(function(err){
+    if(dot)dot.className='gs-dot';
+    toast('Loi: '+err.message);
+  });
+}
+
+function _archiveData(ngay,hangs,khos,dls){
+  var hist=ld('kho_sync_history',[]);
+  hist=hist.filter(function(h){return h.ngay!==ngay;});
+  hist.unshift({
+    ngay:ngay,
+    time:new Date().toLocaleString('vi-VN'),
+    hangs:hangs,khos:khos,dls:dls,
+    countH:hangs.length,countK:khos.length,countD:dls.length
+  });
+  if(hist.length>60)hist=hist.slice(0,60);
+  sv('kho_sync_history',hist);
+}
+
+// ══ LICH SU ══
+function goHistory(){renderHistory();go('s-hist');}
+
+function renderHistory(){
+  var hist=ld('kho_sync_history',[]);
+  document.getElementById('histSub').textContent=hist.length+' ngay da dong bo';
+  var el=document.getElementById('histContent');el.innerHTML='';
+  if(!hist.length){
+    el.innerHTML='<div style="text-align:center;padding:50px 20px;color:var(--mu);"><div style="font-size:36px;margin-bottom:12px;">&#128336;</div><div style="font-size:15px;font-weight:600;margin-bottom:6px;">Chua co lich su</div><div style="font-size:13px;">Sau khi nhan Sheet, du lieu luu tai day</div></div>';
+    return;
+  }
+  hist.forEach(function(h){
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--sf);margin:8px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;';
+    // Header
+    var hd=document.createElement('div');
+    hd.style.cssText='padding:11px 14px;background:#f0fdf4;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;cursor:pointer;';
+    var left=document.createElement('div');
+    var d1=document.createElement('div');d1.style.cssText='font-size:14px;font-weight:700;';d1.textContent=fmtDFull(h.ngay);
+    var d2=document.createElement('div');d2.style.cssText='font-size:11px;color:var(--mu);margin-top:2px;';d2.textContent='Dong bo: '+h.time;
+    left.appendChild(d1);left.appendChild(d2);
+    var right=document.createElement('div');right.style.cssText='text-align:right;font-size:12px;color:var(--mu);';
+    right.innerHTML='Giao: '+h.countH+' | Kho: '+h.countK+' | Don le: '+h.countD;
+    hd.appendChild(left);hd.appendChild(right);
+    // Body
+    var body=document.createElement('div');body.style.display='none';
+    // Summary rows
+    var summary=[
+      {label:'Hang giao',count:h.countH,items:h.hangs,keyName:'gh'},
+      {label:'Nhap/Xuat kho',count:h.countK,items:h.khos,keyName:'nv'},
+      {label:'Don le',count:h.countD,items:h.dls,keyName:'nv'}
+    ];
+    summary.forEach(function(s){
+      if(!s.count)return;
+      var sec=document.createElement('div');sec.style.cssText='padding:8px 14px;border-bottom:.5px solid var(--bd);background:var(--bg);font-size:12px;font-weight:600;color:var(--mu);';
+      sec.textContent=s.label+' ('+s.count+')';body.appendChild(sec);
+      s.items.forEach(function(item,i){
+        var row=document.createElement('div');
+        row.style.cssText='padding:9px 14px;border-bottom:.5px solid var(--bd);font-size:13px;';
+        var name=item[s.keyName]||item.gh||item.nv||'?';
+        var prods=item.products.filter(function(p){return p.name;}).map(function(p){return p.name+(p.qty?' x'+p.qty:'');}).join(', ');
+        row.innerHTML='<span style="font-weight:600;">'+(i+1)+'. '+name+'</span><br><span style="color:var(--mu);font-size:11px;">'+prods+'</span>';
+        body.appendChild(row);
+      });
+    });
+    // Actions
+    var foot=document.createElement('div');foot.style.cssText='padding:10px 14px;display:flex;gap:8px;';
+    var btnZ=document.createElement('button');
+    btnZ.style.cssText='flex:1;padding:10px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:"Be Vietnam Pro",sans-serif;font-size:12px;cursor:pointer;';
+    btnZ.textContent='Zalo ngay nay';
+    btnZ.onclick=(function(hh){return function(e){e.stopPropagation();copyZaloHist(hh);};})(h);
+    var btnR=document.createElement('button');
+    btnR.style.cssText='flex:1;padding:10px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--bl);font-family:"Be Vietnam Pro",sans-serif;font-size:12px;cursor:pointer;';
+    btnR.textContent='Khoi phuc ve app';
+    btnR.onclick=(function(hh){return function(e){e.stopPropagation();restoreHist(hh);};})(h);
+    foot.appendChild(btnZ);foot.appendChild(btnR);
+    body.appendChild(foot);
+    hd.onclick=function(){body.style.display=body.style.display==='none'?'':'none';};
+    card.appendChild(hd);card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+
+function copyZaloHist(h){
+  var m='BAO CAO KHO NGAY '+fmtD(h.ngay)+'\n--------\n';
+  if(h.countH){m+='HANG GIAO ('+h.countH+')\n';h.hangs.forEach(function(hh,i){m+=(i+1)+'. '+hh.gh+'\n';hh.products.forEach(function(p){if(p.name)m+='  ['+p.st+'] '+p.name+' x'+p.qty+'\n';});});}
+  if(h.countK){m+='NHAP/XUAT KHO ('+h.countK+')\n';h.khos.forEach(function(k,i){m+=(i+1)+'. '+k.nv+' - '+k.kho+'\n';k.products.forEach(function(p){if(p.name)m+='  ['+p.st+'] '+p.name+' x'+p.qty+'\n';});});}
+  doCopy(m);
+}
+
+function restoreHist(h){
+  var ngay=h.ngay;
+  var mh=getHangs(ngay).slice(),mk=getKhos(ngay).slice(),md=getDls(ngay).slice();
+  h.hangs.forEach(function(v){if(!mh.find(function(x){return x.id===v.id;}))mh.push(v);});
+  h.khos.forEach(function(v){if(!mk.find(function(x){return x.id===v.id;}))mk.push(v);});
+  h.dls.forEach(function(v){if(!md.find(function(x){return x.id===v.id;}))md.push(v);});
+  svHangs(ngay,mh);svKhos(ngay,mk);svDls(ngay,md);
+  curDate=ngay;
+  toast('Da khoi phuc ve ngay '+fmtD(ngay));
+  goHome();
+}
+
+function clearHistory(){
+  document.getElementById('cfTtl').textContent='Xoa lich su?';
+  document.getElementById('cfBody').textContent='Toan bo lich su dong bo se bi xoa.';
+  document.getElementById('cfOk').onclick=function(){
+    sv('kho_sync_history',[]);closeCf();renderHistory();toast('Da xoa lich su');
+  };
+  document.getElementById('cfOv').classList.add('on');
+}
+
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on');},2500);}
+
+// ===== Anh chung tu phieu nhap kho (them 19/06/2026) =====
+function compressImg(file, cb){
+  var rd=new FileReader();
+  rd.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var mw=1280, sc=Math.min(1, mw/img.width);
+      var w=Math.round(img.width*sc), h=Math.round(img.height*sc);
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.7).split(',')[1]);
+    };
+    img.src=e.target.result;
+  };
+  rd.readAsDataURL(file);
+}
+function renderKhoAnhPreview(){
+  var inp=document.getElementById('kAnhInput');
+  var box=document.getElementById('kAnhPreview');
+  if(!box) return;
+  box.innerHTML='';
+  if(!inp||!inp.files) return;
+  Array.prototype.slice.call(inp.files).forEach(function(f){
+    var u=URL.createObjectURL(f);
+    var d=document.createElement('div');
+    d.style.cssText='width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--bd2);';
+    var im=document.createElement('img'); im.src=u;
+    im.style.cssText='width:100%;height:100%;object-fit:cover;';
+    d.appendChild(im); box.appendChild(d);
+  });
+}
+function uploadKhoAnh(k){
+  var inp=document.getElementById('kAnhInput');
+  if(!inp||!inp.files||!inp.files.length) return;
+  var url=getGsUrl();
+  if(!url){ toast('Chua ket noi Google Sheet, anh chua gui'); return; }
+  var dev=ld('device_id','app-kho-hn');
+  var files=Array.prototype.slice.call(inp.files);
+  toast('Dang tai '+files.length+' anh len Drive...');
+  files.forEach(function(f, idx){
+    compressImg(f, function(b64){
+      fetch(url, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({
+          loai:'uploadAnh', device:dev,
+          inv_id:k.id, row_id:k.id+'-img-'+idx,
+          ngay:k.date, sanPham:(k.products[0]&&k.products[0].name)||'',
+          tenFile:'kho_'+k.id+'_'+idx+'.jpg', mime:'image/jpeg',
+          anhBase64:b64
+        })
+      });
+    });
+  });
+  inp.value='';
+  renderKhoAnhPreview();
+}
+renderHome();
+</script>
+</body>
+</html>
