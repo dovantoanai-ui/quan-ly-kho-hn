@@ -786,8 +786,20 @@ function docDon(){
 }
 /* Hậu tố 3 ký tự lấy từ đồng hồ máy — chống trùng mã khi bộ nhớ máy trống
    (tab ẩn danh, xóa cache, máy khác). Trùng mã = đơn sau đè đơn trước trên Sheet. */
+var _maDaSinh = {};   // mã đã sinh trong phiên này, kể cả chưa lưu
 function hauToMa(){
-  return Date.now().toString(36).slice(-3);
+  return Date.now().toString(36).slice(-2) + Math.random().toString(36).slice(2,5);
+}
+/* Sinh mã và TRÁNH TRÙNG thật sự: đối chiếu với mã đã có (máy + Sheet)
+   và mã vừa sinh trong phiên. Trùng thì bốc lại, tối đa 50 lần. */
+function maKhongTrung(tien, stt, daCo){
+  var ma;
+  for(var i=0;i<50;i++){
+    ma = tien+'-'+pad(stt)+hauToMa();
+    if(!daCo[ma] && !_maDaSinh[ma]) break;
+  }
+  _maDaSinh[ma]=1;
+  return ma;
 }
 function taoMaDon(){
   var d=homNay().slice(2).replace(/-/g,'');
@@ -796,7 +808,7 @@ function taoMaDon(){
   var da={};
   tatCaDonLocal().forEach(function(x){ if(String(x.id).indexOf(tien)===0) da[x.id]=1; });
   (SHEET.don||[]).forEach(function(r){ if(String(r.id).indexOf(tien)===0) da[r.id]=1; });
-  return tien+'-'+pad(Object.keys(da).length+1)+hauToMa();
+  return maKhongTrung(tien, Object.keys(da).length+1, da);
 }
 
 function luuDon(){
@@ -1684,7 +1696,7 @@ function chTaoMa(){
   var da={};
   CHAO.forEach(function(r){ if(String(r.id).indexOf(tien)===0) da[r.id]=1; });
   ld('hdnt_chao_local',[]).forEach(function(x){ if(String(x.id).indexOf(tien)===0) da[x.id]=1; });
-  return tien+'-'+pad(Object.keys(da).length+1)+hauToMa();
+  return maKhongTrung(tien, Object.keys(da).length+1, da);
 }
 
 function chLuu(){
