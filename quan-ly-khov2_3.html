@@ -612,6 +612,11 @@ function buildList(el,data,type){
       var stSet={};item.products.forEach(function(p){if(p.st)stSet[p.st]=1;});
       Object.keys(stSet).forEach(function(st){var b=document.createElement('span');b.className='badge '+(clsMap[st]||'');b.textContent=st;bw.appendChild(b);});
     }
+    if(item.pushed){
+      var pd=document.createElement('span');pd.className='badge';
+      pd.style.background='var(--blb)';pd.style.color='var(--bl)';
+      pd.textContent='Da len Sheet';bw.appendChild(pd);
+    }
     head.appendChild(bw);
     var body=document.createElement('div');body.className='ecard-b';
     item.products.forEach(function(p,pi){
@@ -684,8 +689,12 @@ function saveKho(){
   var products=kRows.map(function(r){var d=kRd[r];return{name:d.name.trim(),qty:parseFloat(d.qty)||0,st:d.st||'Nhap',hang:d.hang||'Moi'};}).filter(function(p){return p.name||p.qty;});
   var k={id:editId||uid(),date:curDate,nv:nv,kho:khoSel,notes:document.getElementById('kNotes').value.trim(),products:products};
   var data=getKhos(curDate);
-  if(editId){var idx=data.findIndex(function(v){return v.id===editId;});if(idx>=0)data[idx]=k;}else data.push(k);
-  svKhos(curDate,data);uploadKhoAnh(k);toast(editId?'Da cap nhat':'Da luu phieu kho');goHome();
+  var daLenK=false;
+  if(editId){var idx=data.findIndex(function(v){return v.id===editId;});if(idx>=0){daLenK=!!data[idx].pushed;data[idx]=k;}}else data.push(k);
+  svKhos(curDate,data);uploadKhoAnh(k);
+  toast(daLenK?'Da cap nhat - phieu nay da len Sheet, bam Sheet se sinh dong moi ben canh dong cu'
+              :(editId?'Da cap nhat':'Da luu phieu kho'));
+  goHome();
 }
 
 // DON LE FORM
@@ -798,8 +807,13 @@ function saveDl(){
   var finalTotal=dlShipOwner==='khach'?prodTotal+ship:prodTotal-ship;
   var dl={id:dlEditId||uid(),date:curDate,nv:nv,payS:dlPaySel,ship:ship,shipOwner:dlShipOwner,notes:document.getElementById('dlNotes').value.trim(),khach:document.getElementById('dlKhach').value.trim(),sdt:document.getElementById('dlSDT').value.trim(),addr:document.getElementById('dlAddr').value.trim(),products:products,total:Math.max(0,finalTotal)};
   var data=getDls(curDate);
-  if(dlEditId){var idx=data.findIndex(function(v){return v.id===dlEditId;});if(idx>=0)data[idx]=dl;}else data.push(dl);
-  svDls(curDate,data);toast(dlEditId?'Da cap nhat':'Da luu don le');goHome();
+  var daLen=false;
+  if(dlEditId){var idx=data.findIndex(function(v){return v.id===dlEditId;});if(idx>=0){daLen=!!data[idx].pushed;data[idx]=dl;}}else data.push(dl);
+  svDls(curDate,data);
+  // phieu da day len Sheet ma sua lai -> co pushed bi bo, lan bam Sheet sau se gui lai
+  toast(daLen?'Da cap nhat - phieu nay da len Sheet, bam Sheet se sinh dong moi ben canh dong cu'
+             :(dlEditId?'Da cap nhat':'Da luu don le'));
+  goHome();
 }
 
 // MAKE PRODUCT ROW (hang + kho)
@@ -1162,11 +1176,24 @@ function _doPush(url){
   toast('Dang gui len Sheet...');
 
   // Lay du lieu ca 3 tab
-  var hangs=getHangs(ngay);
-  var khos=getKhos(ngay);
-  var dls=getDls(ngay);
+  // v2.4: phieu nhan tu app hoa don da duoc day len Sheet ngay luc nhan (co pushed:true)
+  // -> bo qua khi dong bo, tranh ghi trung dong (backend kho append, khong upsert theo row_id)
+  var hangsAll=getHangs(ngay), khosAll=getKhos(ngay), dlsAll=getDls(ngay);
+  function chuaDay(x){ return !x.pushed; }
+  var hangs=hangsAll.filter(chuaDay);
+  var khos =khosAll.filter(chuaDay);
+  var dls  =dlsAll.filter(chuaDay);
   var total=hangs.length+khos.length+dls.length;
-  if(!total){if(dot)dot.className='gs-dot';return toast('Chua co du lieu nao trong ngay nay');}
+  var tongAll=hangsAll.length+khosAll.length+dlsAll.length;
+  if(!total){
+    if(dot)dot.className='gs-dot';
+    if(!tongAll) return toast('Chua co du lieu nao trong ngay nay');
+    // con phieu nhung deu da len Sheet -> van don so nhap va luu lich su
+    _archiveData(ngay,hangsAll,khosAll,dlsAll);
+    svHangs(ngay,[]);svKhos(ngay,[]);svDls(ngay,[]);
+    renderHome();
+    return toast('Cac phieu deu da len Sheet tu truoc - da luu lich su');
+  }
 
   // HEADERS (17 cols, Apps Script them Thiet bi + Sync_time thanh 19):
   // inv_id | row_id | Ngay | Loai | Nhan vien | San pham | Tinh trang | Moi Cu
@@ -1237,8 +1264,8 @@ function _doPush(url){
     body:payload
   }).then(function(){
     if(dot)dot.className='gs-dot';
-    // Luu vao lich su
-    _archiveData(ngay,hangs,khos,dls);
+    // Luu vao lich su - luu CA phieu da len Sheet tu truoc de lich su khong thieu
+    _archiveData(ngay,hangsAll,khosAll,dlsAll);
     // Clear khoi danh sach chinh
     svHangs(ngay,[]);svKhos(ngay,[]);svDls(ngay,[]);
     renderHome();
@@ -1655,6 +1682,41 @@ function hdVeList(){
   HD_CHAO.forEach(function(d){ el.appendChild(hdDongPhieu('chao',d)); });
 }
 
+/* Gom rows 20 cot dung y chuan _doPush de day thang len Sheet kho ngay luc nhan don.
+   Phieu day duoc se mang co pushed:true -> _doPush bo qua, khong ghi trung dong. */
+function hdRowsDl(d,ngay){
+  var rows=[], prods=d.products.filter(function(p){ return p.name; });
+  prods.forEach(function(p,pi){
+    rows.push([ d.id, d.id+'_'+pi, ngay, 'DonLe', d.nv,
+      p.name, 'Ban', '', p.qty||0, '',
+      pi===0?d.notes||'':'',
+      p.price||0, p.sub||0,
+      pi===0?d.total||0:'', pi===0?d.ship||0:'',
+      pi===0?d.shipOwner||'khach':'', pi===0?d.payS||'':'',
+      pi===0?d.khach||'':'', pi===0?d.sdt||'':'', pi===0?d.addr||'':'' ]);
+  });
+  return rows;
+}
+function hdRowsKho(k,ngay){
+  var rows=[], prods=k.products.filter(function(p){ return p.name; });
+  prods.forEach(function(p,pi){
+    rows.push([ k.id, k.id+'_'+pi, ngay, 'NhapXuat', k.nv,
+      p.name, p.st||'Nhap', p.hang||'Moi', p.qty||0, k.kho||'',
+      pi===0?k.notes||'':'', '','','','','','','','','' ]);
+  });
+  return rows;
+}
+function hdDayKho(rows,ngay,cb){
+  var url=getGsUrl();
+  if(!url || !rows.length){ if(cb)cb(false); return; }
+  var device=ld('device_id','');
+  if(!device){ device='KHO_'+Date.now().toString(36).toUpperCase(); sv('device_id',device); }
+  fetch(url,{ method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({loai:'kho',ngay:ngay,device:device,rows:rows})
+  }).then(function(){ if(cb)cb(true); }).catch(function(){ if(cb)cb(false); });
+}
+
 function hdNhan(){
   var chon=[];
   HD_DON.forEach(function(d){ if(HD_CHON[d.id]) chon.push({kieu:'don',d:d}); });
@@ -1667,6 +1729,7 @@ function hdNhan(){
 
   var ngay=curDate;
   var dls=getDls(ngay), khos=getKhos(ngay);
+  var moiDl=[], moiKho=[];
   var soDl=0, soChao=0, soVe=0;
 
   chon.forEach(function(x){
@@ -1675,7 +1738,7 @@ function hdNhan(){
       var ban=d.sps.filter(function(p){ return hdNorm(p.loai)!=='thuhoi' && p.qty>0; });
       var ve =d.sps.filter(function(p){ return hdNorm(p.loai)==='thuhoi' && p.qty>0; });
       if(ban.length){
-        dls.push({ id:uid(), date:ngay, nv:d.nv||'',
+        moiDl.push({ id:uid(), date:ngay, nv:d.nv||'',
           payS:'', ship:0, shipOwner:'khach',
           notes:hdGhiChu('[HD] '+d.id, d.ghichu),
           khach:d.khach||'', sdt:d.sdt||'', addr:d.addr||'',
@@ -1684,7 +1747,7 @@ function hdNhan(){
         soDl++;
       }
       if(ve.length){
-        khos.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
+        moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
           notes:hdGhiChu('[HD] '+d.id+' - hang thu hoi', d.ghichu),
           products:ve.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Nhap',hang:'Cu'}; }),
           src:'hoadon', hdId:d.id });
@@ -1693,7 +1756,7 @@ function hdNhan(){
     } else {
       var sp=d.sps.filter(function(p){ return p.qty>0; });
       if(sp.length){
-        khos.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
+        moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
           notes:hdGhiChu('[CHAO] '+d.id+' - '+(d.ch||''), d.ghichu),
           products:sp.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Xuat',hang:'Moi'}; }),
           src:'hoadon', hdId:d.id });
@@ -1706,7 +1769,14 @@ function hdNhan(){
              device:ld('device_id','KHO') });
   });
 
-  svDls(ngay,dls); svKhos(ngay,khos);
+  /* Day thang len Sheet kho ngay luc nhan, khong doi bam nut Sheet.
+     Backend kho append theo dong (khong upsert row_id) nen phieu da day
+     phai mang co pushed:true de _doPush bo qua, tranh nhan doi du lieu. */
+  var coUrl=!!getGsUrl(), rows=[], idMoi={};
+  moiDl.forEach(function(x){ if(coUrl)x.pushed=true; idMoi[x.id]=1; rows=rows.concat(hdRowsDl(x,ngay)); });
+  moiKho.forEach(function(x){ if(coUrl)x.pushed=true; idMoi[x.id]=1; rows=rows.concat(hdRowsKho(x,ngay)); });
+
+  svDls(ngay,dls.concat(moiDl)); svKhos(ngay,khos.concat(moiKho));
   HD_CHON={};
   var da=hdDaNhan();
   HD_DON=HD_DON.filter(function(d){ return da.indexOf(d.id)<0; });
@@ -1716,9 +1786,22 @@ function hdNhan(){
   if(soDl)   msg.push(soDl+' don le');
   if(soChao) msg.push(soChao+' phieu chao');
   if(soVe)   msg.push(soVe+' phieu thu hoi');
-  toast('Da nhan: '+msg.join(' + '));
   el.value='';
   hdVeList(); hdVeBanner(); goHome();
+
+  if(!coUrl){
+    toast('Da nhan: '+msg.join(' + ')+' - chua co URL Sheet kho, bam nut Sheet sau');
+    return;
+  }
+  toast('Da nhan: '+msg.join(' + ')+' - dang day len Sheet kho...');
+  hdDayKho(rows,ngay,function(ok){
+    if(ok){ toast('Da nhan va day len Sheet kho: '+msg.join(' + ')); return; }
+    // day that bai -> bo co de lan bam nut Sheet sau van gui lai
+    var a=getDls(ngay); a.forEach(function(x){ if(idMoi[x.id]) x.pushed=false; }); svDls(ngay,a);
+    var b=getKhos(ngay); b.forEach(function(x){ if(idMoi[x.id]) x.pushed=false; }); svKhos(ngay,b);
+    renderHome();
+    toast('Da nhan don nhung chua day duoc len Sheet kho - bam nut Sheet sau');
+  });
 }
 
 renderHome();
