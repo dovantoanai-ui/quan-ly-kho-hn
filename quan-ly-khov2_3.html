@@ -414,6 +414,21 @@ select.finp{-webkit-appearance:none;appearance:none;}
       <div class="ipanel" id="prP3" style="display:none"><button onclick="document.getElementById('prFile').click()" style="width:100%;padding:10px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Chon file Excel/CSV</button><input type="file" id="prFile" class="finp-file" accept=".xlsx,.xls,.csv" onchange="importFile(this)"><div style="font-size:11px;color:var(--mu);margin-top:5px;">Cot dau = ten san pham</div><div class="ibtns" style="margin-top:8px;"><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
       <div class="cmng" id="prMng"></div>
     </div>
+    <!-- Nguoi xuat mac dinh: dung khi nhan don tu app hoa don -->
+    <div class="sec" style="margin-top:10px">
+      <div class="sec-hd"><div class="sec-ico">&#128100;</div><div class="sec-ttl">Nguoi xuat mac dinh</div></div>
+      <div class="frow">
+        <span class="flbl">Ten toi</span>
+        <input class="finp" id="setNguoiXuat" type="text" placeholder="Ten nguoi xuat hang">
+      </div>
+      <div style="padding:10px 14px 12px">
+        <button class="bbtn pri" style="width:100%" onclick="luuNguoiXuat()">Luu ten</button>
+        <div class="mu" style="font-size:11.5px;margin-top:8px;line-height:1.55;color:var(--mu)">
+          Ten nay duoc ghi vao o <b>Nguoi xuat</b> khi anh nhan don tu app hoa don. Nhap 1 lan, may nay nho luon.
+        </div>
+      </div>
+    </div>
+
     <!-- Google Sheet -->
     <div class="sec" style="margin-top:10px;margin-bottom:10px;">
       <div class="sec-hd"><div class="sec-ico" style="background:#e6f4ea;color:#0f9d58;">&#128209;</div><div class="sec-ttl">Ket noi Google Sheet</div></div>
@@ -451,19 +466,14 @@ select.finp{-webkit-appearance:none;appearance:none;}
     <div style="flex:1"><div class="tb-ttl">Don tu app hoa don</div><div class="tb-sub" id="hdSub"></div></div>
     <button class="tb-btn" onclick="hdTai(true)">Tai lai</button>
   </div>
+  <div id="hdNguoiBox"></div>
   <div class="sec">
-    <div class="sec-hd"><div class="sec-ico">&#128229;</div><div class="sec-ttl">Chon don de nhan vao kho</div></div>
+    <div class="sec-hd"><div class="sec-ico">&#128229;</div><div class="sec-ttl">Bam Nhan la don vao so kho</div></div>
     <div id="hdList"></div>
   </div>
-  <div class="sec">
-    <div class="frow"><span class="flbl">Nguoi xuat</span><input class="finp" id="hdNguoi" type="text" placeholder="Ten nguoi xuat hang"></div>
-  </div>
-  <div style="padding:10px 14px 0;font-size:12px;color:var(--mu);line-height:1.6;">
+  <div style="padding:10px 14px 24px;font-size:12px;color:var(--mu);line-height:1.6;">
     Don ban le vao tab <b>Don le</b>, phieu chao hang vao tab <b>Nhap/Xuat</b> trang thai <b>Xuat</b>.
     Hang ve kho khong mang theo tien &mdash; doanh thu chi dem o so hoa don.
-  </div>
-  <div class="bbar">
-    <button class="bbtn pri" id="hdBtn" onclick="hdNhan()">Nhan don da chon</button>
   </div>
 </div>
 
@@ -1112,7 +1122,7 @@ function fbCopy(txt){var ta=document.createElement('textarea');ta.value=txt;ta.s
 
 // SETTINGS
 function swTab(k,n){[1,2,3].forEach(function(i){var t=document.getElementById(k+'T'+i);var p=document.getElementById(k+'P'+i);if(t)t.classList.toggle('on',i===n);if(p)p.style.display=i===n?'':'none';});}
-function renderSettings(){renderGsStatus();['gh','nv','pr'].forEach(function(k){var list=CFG[k].get();document.getElementById(CFG[k].cnt).textContent=list.length;var mng=document.getElementById(CFG[k].mng);mng.innerHTML='';list.forEach(function(v,i){var cx=document.createElement('div');cx.className='cx';var sp=document.createElement('span');sp.textContent=v;var del=document.createElement('span');del.className='cxd';del.textContent='x';del.onclick=(function(kk,ii){return function(){var a=CFG[kk].get();a.splice(ii,1);CFG[kk].save(a);renderSettings();};})(k,i);cx.appendChild(sp);cx.appendChild(del);mng.appendChild(cx);});});}
+function renderSettings(){renderGsStatus();var _nx=document.getElementById('setNguoiXuat');if(_nx)_nx.value=getNguoiXuat();['gh','nv','pr'].forEach(function(k){var list=CFG[k].get();document.getElementById(CFG[k].cnt).textContent=list.length;var mng=document.getElementById(CFG[k].mng);mng.innerHTML='';list.forEach(function(v,i){var cx=document.createElement('div');cx.className='cx';var sp=document.createElement('span');sp.textContent=v;var del=document.createElement('span');del.className='cxd';del.textContent='x';del.onclick=(function(kk,ii){return function(){var a=CFG[kk].get();a.splice(ii,1);CFG[kk].save(a);renderSettings();};})(k,i);cx.appendChild(sp);cx.appendChild(del);mng.appendChild(cx);});});}
 function addOne(k){var inp=document.getElementById(k+'AddI');var v=inp.value.trim();if(!v)return;var a=CFG[k].get();if(a.indexOf(v)<0){a.push(v);CFG[k].save(a);}inp.value='';renderSettings();toast('Da them: '+v);}
 function bulkAdd(k){var ta=document.getElementById(k+'Bulk');var lines=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);if(!lines.length)return toast('Chua co du lieu');var a=CFG[k].get();var added=0;lines.forEach(function(v){if(a.indexOf(v)<0){a.push(v);added++;}});CFG[k].save(a);ta.value='';renderSettings();toast('Them '+added+' muc');}
 function clearAll(k){CFG[k].save([]);renderSettings();toast('Da xoa toan bo');}
@@ -1452,7 +1462,7 @@ function uploadKhoAnh(k){
    ============================================================ */
 var HD_URL='https://script.google.com/macros/s/AKfycbycyJdZzFAgn_FCTTq3V-ncLoJbFxylcoFwwmY_KsjWyNN0GFmey40i8eFd1ykedKT-/exec';
 var HD_COSO='Ha Noi';
-var HD_DON=[], HD_CHAO=[], HD_CHON={};
+var HD_DON=[], HD_CHAO=[];
 
 function hdNorm(s){
   s=String(s||'').toLowerCase().trim();
@@ -1586,7 +1596,25 @@ function hdVeBanner(){
   b.appendChild(t); b.appendChild(btn);
   el.appendChild(b);
 }
-function goHdon(){ hdVeList(); go('s-hdon'); }
+function hdVeList(){
+  var el=document.getElementById('hdList'); if(!el)return;
+  el.innerHTML='';
+  var n=HD_DON.length+HD_CHAO.length;
+  var sub=document.getElementById('hdSub');
+  if(sub) sub.textContent=n+' don cho kho - co so '+HD_COSO;
+  if(!n){
+    var e=document.createElement('div');
+    e.className='empty';
+    var i1=document.createElement('div'); i1.className='empty-ico'; i1.textContent='...';
+    var i2=document.createElement('div'); i2.className='empty-ttl'; i2.textContent='Khong co don nao cho';
+    var i3=document.createElement('div'); i3.className='empty-sub'; i3.textContent='Bam Tai lai de kiem tra';
+    e.appendChild(i1); e.appendChild(i2); e.appendChild(i3);
+    el.appendChild(e); return;
+  }
+  HD_DON.forEach(function(d){ el.appendChild(hdDongPhieu('don',d)); });
+  HD_CHAO.forEach(function(d){ el.appendChild(hdDongPhieu('chao',d)); });
+}
+function goHdon(){ hdVeNguoiBox(); hdVeList(); go('s-hdon'); }
 
 function hdTheThe(txt,cls){
   var p=document.createElement('span');
@@ -1594,19 +1622,80 @@ function hdTheThe(txt,cls){
   p.textContent=txt;
   return p;
 }
+
+/* ---- Nguoi xuat mac dinh: nhap 1 lan, may nay nho luon ---- */
+function getNguoiXuat(){ return ld('kho_nguoi_xuat',''); }
+function svNguoiXuat(v){ sv('kho_nguoi_xuat', String(v||'').trim()); }
+function luuNguoiXuat(){
+  var el=document.getElementById('setNguoiXuat');
+  var v=el?el.value.trim():'';
+  if(!v) return toast('Chua nhap ten');
+  svNguoiXuat(v); hdVeNguoiBox(); hdVeList();
+  toast('Da luu nguoi xuat: '+v);
+}
+/* Hop hien ten o dau man nhan don. Chua co ten thi hien o nhap. */
+function hdVeNguoiBox(sua){
+  var box=document.getElementById('hdNguoiBox'); if(!box)return;
+  box.innerHTML='';
+  var ten=getNguoiXuat();
+  var sec=document.createElement('div');
+  sec.className='sec';
+
+  if(ten && !sua){
+    var row=document.createElement('div');
+    row.className='frow';
+    var lbl=document.createElement('span'); lbl.className='flbl'; lbl.textContent='Nguoi xuat';
+    var nm=document.createElement('div');
+    nm.style.cssText='flex:1;font-size:15px;font-weight:600;';
+    nm.textContent=ten;
+    var btn=document.createElement('button');
+    btn.className='tb-btn';
+    btn.style.cssText='background:var(--blb);color:var(--bl);padding:7px 12px;';
+    btn.textContent='Doi';
+    btn.addEventListener('click',function(){ hdVeNguoiBox(true); });
+    row.appendChild(lbl); row.appendChild(nm); row.appendChild(btn);
+    sec.appendChild(row);
+  } else {
+    var row2=document.createElement('div');
+    row2.className='frow';
+    var lbl2=document.createElement('span'); lbl2.className='flbl'; lbl2.textContent='Nguoi xuat';
+    var inp=document.createElement('input');
+    inp.className='finp'; inp.type='text';
+    inp.placeholder='Ten nguoi xuat hang';
+    inp.value=ten;
+    row2.appendChild(lbl2); row2.appendChild(inp);
+    sec.appendChild(row2);
+
+    var wrap=document.createElement('div');
+    wrap.style.cssText='padding:10px 14px 12px';
+    var ok=document.createElement('button');
+    ok.className='bbtn pri'; ok.style.width='100%';
+    ok.textContent='Luu ten';
+    ok.addEventListener('click',function(){
+      var v=inp.value.trim();
+      if(!v) return toast('Chua nhap ten');
+      svNguoiXuat(v);
+      var st=document.getElementById('setNguoiXuat'); if(st)st.value=v;
+      hdVeNguoiBox(); hdVeList();
+      toast('Da luu nguoi xuat: '+v);
+    });
+    var note=document.createElement('div');
+    note.style.cssText='font-size:11.5px;color:var(--mu);margin-top:8px;line-height:1.55;';
+    note.textContent='Nhap 1 lan roi bam Luu, lan sau khong hoi nua. Sua lai o Cai dat.';
+    wrap.appendChild(ok); wrap.appendChild(note);
+    sec.appendChild(wrap);
+  }
+  box.appendChild(sec);
+}
+
 function hdDongPhieu(kieu,d){
+  var coTen=!!getNguoiXuat();
   var card=document.createElement('div');
   card.className='ecard';
-  card.style.cursor='pointer';
+  card.style.cursor='default';
 
   var head=document.createElement('div');
   head.className='ecard-h';
-
-  var box=document.createElement('input');
-  box.type='checkbox';
-  box.style.cssText='width:20px;height:20px;flex-shrink:0;accent-color:#1e5fa8;';
-  box.checked=!!HD_CHON[d.id];
-
   var meta=document.createElement('div');
   meta.style.flex='1';
   var t1=document.createElement('div');
@@ -1620,15 +1709,15 @@ function hdDongPhieu(kieu,d){
   mo.push(fmtD(d.ngay));
   t2.textContent=mo.join(' - ');
   meta.appendChild(t1); meta.appendChild(t2);
-
-  head.appendChild(box);
   head.appendChild(meta);
   head.appendChild(hdTheThe(kieu==='don'?'Don le':'Chao hang', kieu==='don'?'pill-p':'pill-g'));
   if(kieu==='chao' && d.chMoi) head.appendChild(hdTheThe('CH moi','pill-b'));
 
   var body=document.createElement('div');
   body.style.cssText='padding:8px 14px 10px;';
+  var tongSL=0;
   d.sps.forEach(function(p){
+    tongSL+=(parseFloat(p.qty)||0);
     var ln=document.createElement('div');
     ln.style.cssText='display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;';
     var a=document.createElement('span');
@@ -1639,51 +1728,38 @@ function hdDongPhieu(kieu,d){
     ln.appendChild(a); ln.appendChild(b2);
     body.appendChild(ln);
   });
+  var tg=document.createElement('div');
+  tg.style.cssText='font-size:11.5px;color:var(--mu);margin-top:6px;padding-top:6px;border-top:1px dashed var(--bd);';
+  tg.textContent='Tong '+fmt(tongSL)+' goi - '+d.sps.length+' mat hang';
+  body.appendChild(tg);
+
   if(kieu==='don' && d.addr){
     var ad=document.createElement('div');
     ad.style.cssText='font-size:11.5px;color:var(--mu);margin-top:5px;';
-    ad.textContent='Dia chi: '+d.addr;
+    ad.textContent='Dia chi : '+d.addr;
     body.appendChild(ad);
   }
   if(d.ghichu){
     var gc=document.createElement('div');
     gc.style.cssText='font-size:11.5px;color:var(--mu);margin-top:4px;';
-    gc.textContent='Ghi chu: '+d.ghichu;
+    gc.textContent='Ghi chu : '+d.ghichu;
     body.appendChild(gc);
   }
 
-  function doi(){
-    HD_CHON[d.id]=!HD_CHON[d.id];
-    box.checked=!!HD_CHON[d.id];
-    card.style.borderColor=HD_CHON[d.id]?'var(--bl)':'var(--bd)';
-  }
-  card.addEventListener('click',function(ev){ if(ev.target!==box) doi(); });
-  box.addEventListener('click',function(ev){ ev.stopPropagation(); doi(); });
-  card.style.borderColor=HD_CHON[d.id]?'var(--bl)':'var(--bd)';
+  var chan=document.createElement('div');
+  chan.style.cssText='padding:0 14px 12px;';
+  var btn=document.createElement('button');
+  btn.className='bbtn pri';
+  btn.style.width='100%';
+  btn.textContent = coTen ? 'Nhan vao kho' : 'Nhap ten nguoi xuat truoc';
+  btn.disabled = !coTen;
+  if(!coTen) btn.style.opacity='.5';
+  btn.addEventListener('click',function(){ hdNhanMot(kieu,d,btn); });
+  chan.appendChild(btn);
 
-  card.appendChild(head); card.appendChild(body);
+  card.appendChild(head); card.appendChild(body); card.appendChild(chan);
   return card;
 }
-function hdVeList(){
-  var el=document.getElementById('hdList'); if(!el)return;
-  el.innerHTML='';
-  var n=HD_DON.length+HD_CHAO.length;
-  document.getElementById('hdSub').textContent=n+' don cho kho - co so '+HD_COSO;
-  if(!n){
-    var e=document.createElement('div');
-    e.className='empty';
-    var i1=document.createElement('div'); i1.className='empty-ico'; i1.textContent='...';
-    var i2=document.createElement('div'); i2.className='empty-ttl'; i2.textContent='Khong co don nao cho';
-    var i3=document.createElement('div'); i3.className='empty-sub'; i3.textContent='Bam Tai lai de kiem tra';
-    e.appendChild(i1); e.appendChild(i2); e.appendChild(i3);
-    el.appendChild(e); return;
-  }
-  HD_DON.forEach(function(d){ el.appendChild(hdDongPhieu('don',d)); });
-  HD_CHAO.forEach(function(d){ el.appendChild(hdDongPhieu('chao',d)); });
-}
-
-/* Gom rows 20 cot dung y chuan _doPush de day thang len Sheet kho ngay luc nhan don.
-   Phieu day duoc se mang co pushed:true -> _doPush bo qua, khong ghi trung dong. */
 function hdRowsDl(d,ngay){
   var rows=[], prods=d.products.filter(function(p){ return p.name; });
   prods.forEach(function(p,pi){
@@ -1717,90 +1793,73 @@ function hdDayKho(rows,ngay,cb){
   }).then(function(){ if(cb)cb(true); }).catch(function(){ if(cb)cb(false); });
 }
 
-function hdNhan(){
-  var chon=[];
-  HD_DON.forEach(function(d){ if(HD_CHON[d.id]) chon.push({kieu:'don',d:d}); });
-  HD_CHAO.forEach(function(d){ if(HD_CHON[d.id]) chon.push({kieu:'chao',d:d}); });
-  if(!chon.length) return toast('Chua chon don nao');
-
-  var el=document.getElementById('hdNguoi');
-  var nguoi=el.value.trim();
-  if(!nguoi){ toast('Dien ten nguoi xuat truoc'); el.focus(); return; }
+/* Nhan MOT don: bam la vao so kho + len Sheet + bao nguoc app hoa don */
+function hdNhanMot(kieu,d,btn){
+  var nguoi=getNguoiXuat();
+  if(!nguoi){ toast('Chua co ten nguoi xuat'); hdVeNguoiBox(true); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Dang nhan...'; }
 
   var ngay=curDate;
-  var dls=getDls(ngay), khos=getKhos(ngay);
-  var moiDl=[], moiKho=[];
-  var soDl=0, soChao=0, soVe=0;
+  var moiDl=[], moiKho=[], msg=[];
 
-  chon.forEach(function(x){
-    var d=x.d;
-    if(x.kieu==='don'){
-      var ban=d.sps.filter(function(p){ return hdNorm(p.loai)!=='thuhoi' && p.qty>0; });
-      var ve =d.sps.filter(function(p){ return hdNorm(p.loai)==='thuhoi' && p.qty>0; });
-      if(ban.length){
-        moiDl.push({ id:uid(), date:ngay, nv:d.nv||'',
-          payS:'', ship:0, shipOwner:'khach',
-          notes:hdGhiChu('[HD] '+d.id, d.ghichu),
-          khach:d.khach||'', sdt:d.sdt||'', addr:d.addr||'',
-          products:ban.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,price:0,sub:0}; }),
-          total:0, src:'hoadon', hdId:d.id });
-        soDl++;
-      }
-      if(ve.length){
-        moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
-          notes:hdGhiChu('[HD] '+d.id+' - hang thu hoi', d.ghichu),
-          products:ve.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Nhap',hang:'Cu'}; }),
-          src:'hoadon', hdId:d.id });
-        soVe++;
-      }
-    } else {
-      var sp=d.sps.filter(function(p){ return p.qty>0; });
-      if(sp.length){
-        moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
-          notes:hdGhiChu('[CHAO] '+d.id+' - '+(d.ch||''), d.ghichu),
-          products:sp.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Xuat',hang:'Moi'}; }),
-          src:'hoadon', hdId:d.id });
-        soChao++;
-      }
+  if(kieu==='don'){
+    var ban=d.sps.filter(function(p){ return hdNorm(p.loai)!=='thuhoi' && p.qty>0; });
+    var ve =d.sps.filter(function(p){ return hdNorm(p.loai)==='thuhoi' && p.qty>0; });
+    if(ban.length){
+      moiDl.push({ id:uid(), date:ngay, nv:d.nv||'',
+        payS:'', ship:0, shipOwner:'khach',
+        notes:hdGhiChu('[HD] '+d.id, d.ghichu),
+        khach:d.khach||'', sdt:d.sdt||'', addr:d.addr||'',
+        products:ban.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,price:0,sub:0}; }),
+        total:0, src:'hoadon', hdId:d.id });
+      msg.push('1 don le');
     }
-    hdThemNhan(d.id);
-    hdPost({ loai:(x.kieu==='don')?'xacnhan':'xacnhan_chao',
-             id:d.id, nguoiXuat:nguoi, ngayXN:ngay,
-             device:ld('device_id','KHO') });
-  });
+    if(ve.length){
+      moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
+        notes:hdGhiChu('[HD] '+d.id+' - hang thu hoi', d.ghichu),
+        products:ve.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Nhap',hang:'Cu'}; }),
+        src:'hoadon', hdId:d.id });
+      msg.push('1 phieu thu hoi');
+    }
+  } else {
+    var sp=d.sps.filter(function(p){ return p.qty>0; });
+    if(sp.length){
+      moiKho.push({ id:uid(), date:ngay, nv:d.nv||'', kho:'Ha Noi',
+        notes:hdGhiChu('[CHAO] '+d.id+' - '+(d.ch||''), d.ghichu),
+        products:sp.map(function(p){ return {name:hdTenSP(p.name),qty:p.qty,st:'Xuat',hang:'Moi'}; }),
+        src:'hoadon', hdId:d.id });
+      msg.push('1 phieu chao');
+    }
+  }
+  if(!moiDl.length && !moiKho.length){
+    if(btn){ btn.disabled=false; btn.textContent='Nhan vao kho'; }
+    return toast('Don nay khong co dong nao hop le');
+  }
 
-  /* Day thang len Sheet kho ngay luc nhan, khong doi bam nut Sheet.
-     Backend kho append theo dong (khong upsert row_id) nen phieu da day
-     phai mang co pushed:true de _doPush bo qua, tranh nhan doi du lieu. */
   var coUrl=!!getGsUrl(), rows=[], idMoi={};
   moiDl.forEach(function(x){ if(coUrl)x.pushed=true; idMoi[x.id]=1; rows=rows.concat(hdRowsDl(x,ngay)); });
   moiKho.forEach(function(x){ if(coUrl)x.pushed=true; idMoi[x.id]=1; rows=rows.concat(hdRowsKho(x,ngay)); });
 
-  svDls(ngay,dls.concat(moiDl)); svKhos(ngay,khos.concat(moiKho));
-  HD_CHON={};
-  var da=hdDaNhan();
-  HD_DON=HD_DON.filter(function(d){ return da.indexOf(d.id)<0; });
-  HD_CHAO=HD_CHAO.filter(function(d){ return da.indexOf(d.id)<0; });
+  svDls(ngay, getDls(ngay).concat(moiDl));
+  svKhos(ngay, getKhos(ngay).concat(moiKho));
+  hdThemNhan(d.id);
+  hdPost({ loai:(kieu==='don')?'xacnhan':'xacnhan_chao',
+           id:d.id, nguoiXuat:nguoi, ngayXN:ngay, device:ld('device_id','KHO') });
 
-  var msg=[];
-  if(soDl)   msg.push(soDl+' don le');
-  if(soChao) msg.push(soChao+' phieu chao');
-  if(soVe)   msg.push(soVe+' phieu thu hoi');
-  el.value='';
-  hdVeList(); hdVeBanner(); goHome();
+  // bo don khoi danh sach cho
+  if(kieu==='don') HD_DON=HD_DON.filter(function(x){ return x.id!==d.id; });
+  else             HD_CHAO=HD_CHAO.filter(function(x){ return x.id!==d.id; });
+  hdVeList(); hdVeBanner();
 
   if(!coUrl){
-    toast('Da nhan: '+msg.join(' + ')+' - chua co URL Sheet kho, bam nut Sheet sau');
+    toast('Da nhan '+d.id+' ('+msg.join(' + ')+') - chua co URL Sheet kho, bam nut Sheet sau');
     return;
   }
-  toast('Da nhan: '+msg.join(' + ')+' - dang day len Sheet kho...');
   hdDayKho(rows,ngay,function(ok){
-    if(ok){ toast('Da nhan va day len Sheet kho: '+msg.join(' + ')); return; }
-    // day that bai -> bo co de lan bam nut Sheet sau van gui lai
+    if(ok){ toast('Da nhan '+d.id+' va day len Sheet kho'); return; }
     var a=getDls(ngay); a.forEach(function(x){ if(idMoi[x.id]) x.pushed=false; }); svDls(ngay,a);
     var b=getKhos(ngay); b.forEach(function(x){ if(idMoi[x.id]) x.pushed=false; }); svKhos(ngay,b);
-    renderHome();
-    toast('Da nhan don nhung chua day duoc len Sheet kho - bam nut Sheet sau');
+    toast('Da nhan '+d.id+' nhung chua day duoc len Sheet - bam nut Sheet sau');
   });
 }
 
