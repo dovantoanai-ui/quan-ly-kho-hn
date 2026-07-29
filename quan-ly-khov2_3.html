@@ -2838,18 +2838,74 @@ function hdDongPhieu(kieu,d){
   }
 
   var chan=document.createElement('div');
-  chan.style.cssText='padding:0 14px 12px;';
+  chan.style.cssText='padding:0 14px 12px;display:flex;gap:8px;';
   var btn=document.createElement('button');
   btn.className='bbtn pri';
-  btn.style.width='100%';
+  btn.style.flex='1';
   btn.textContent = coTen ? 'Nhan vao kho' : 'Them Nhan vien kho o Cai dat';
   btn.disabled = !coTen;
   if(!coTen) btn.style.opacity='.5';
   btn.addEventListener('click',function(){ hdNhanMot(kieu,d,btn); });
   chan.appendChild(btn);
+  // nut huy xac nhan - kho khong di hang vi ly do nao do
+  var btnTC=document.createElement('button');
+  btnTC.className='bbtn';
+  btnTC.style.cssText='flex:0 0 auto;min-width:84px;color:var(--re);border:1px solid var(--re);background:#fff;';
+  btnTC.textContent='Tu choi';
+  btnTC.addEventListener('click',function(){ hdMoTuChoi(kieu,d,card); });
+  chan.appendChild(btnTC);
 
-  card.appendChild(head); card.appendChild(body); card.appendChild(chan);
+  // o nhap ly do tu choi (an, hien khi bam Tu choi)
+  var oTC=document.createElement('div');
+  oTC.className='hd-tc-box';
+  oTC.style.cssText='display:none;padding:0 14px 12px;';
+  var inpTC=document.createElement('input');
+  inpTC.type='text';
+  inpTC.placeholder='Ly do khong di hang (vd: het hang, sai don...)';
+  inpTC.style.cssText='width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;margin-bottom:8px;';
+  var hangTC=document.createElement('div');
+  hangTC.style.cssText='display:flex;gap:8px;';
+  var okTC=document.createElement('button');
+  okTC.className='bbtn';
+  okTC.style.cssText='flex:1;background:var(--re);color:#fff;';
+  okTC.textContent='Xac nhan tu choi';
+  okTC.addEventListener('click',function(){ hdTuChoiMot(kieu,d,inpTC.value,okTC); });
+  var thoiTC=document.createElement('button');
+  thoiTC.className='bbtn';
+  thoiTC.style.cssText='flex:0 0 auto;min-width:70px;';
+  thoiTC.textContent='Thoi';
+  thoiTC.addEventListener('click',function(){ oTC.style.display='none'; });
+  hangTC.appendChild(okTC); hangTC.appendChild(thoiTC);
+  oTC.appendChild(inpTC); oTC.appendChild(hangTC);
+
+  card.appendChild(head); card.appendChild(body); card.appendChild(chan); card.appendChild(oTC);
   return card;
+}
+function hdMoTuChoi(kieu,d,card){
+  var o=card.querySelector('.hd-tc-box');
+  if(o){ o.style.display = (o.style.display==='none') ? 'block' : 'none';
+    var i=o.querySelector('input'); if(i && o.style.display==='block') i.focus(); }
+}
+/* Tu choi MOT don: khong ghi so kho, bao nguoc app hoa don trang thai Da huy,
+   luu so tu choi tren may de doi chieu, khong hien lai don nay nua. */
+function hdTuChoiMot(kieu,d,lyDo,btn){
+  lyDo=String(lyDo||'').trim();
+  if(!lyDo){ toast('Anh nhap ly do tu choi da'); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Dang gui...'; }
+  var nguoi=getNguoiXuat()||'';
+  // so tu choi local - xem lai / doi chieu khi can
+  var so=ld('kho_hd_tuchoi',[]);
+  so.unshift({ id:d.id, kieu:kieu, ngay:todayStr(), luc:new Date().toTimeString().slice(0,5),
+    ch:d.ch||d.khach||'', nguoi:nguoi, lyDo:lyDo });
+  sv('kho_hd_tuchoi', so.slice(0,300));
+  hdThemNhan(d.id);   // danh dau da xu ly -> khong hien lai
+  hdPost({ loai:(kieu==='don')?'huy':'huy_chao',
+           id:d.id, nguoiXuat:nguoi, lyDo:lyDo,
+           ngayXN:todayStr(), device:ld('device_id','KHO') });
+  if(kieu==='don') HD_DON=HD_DON.filter(function(x){ return x.id!==d.id; });
+  else             HD_CHAO=HD_CHAO.filter(function(x){ return x.id!==d.id; });
+  hdVeList(); hdVeBanner(); veBell();
+  toast('Da tu choi '+d.id+' - da bao ve app hoa don (Da huy)');
 }
 function hdRowsDl(d,ngay){
   var rows=[], prods=d.products.filter(function(p){ return p.name; });
