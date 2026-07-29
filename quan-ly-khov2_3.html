@@ -538,7 +538,7 @@ select.finp{-webkit-appearance:none;appearance:none;}
   </div>
   <div id="dsList"></div>
   <div style="padding:10px 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
-    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Doi + Tang &minus; Thu hoi</b> (hoa don NV giao).
+    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Tang &minus; Thu hoi</b> (hoa don NV giao). Doi ngang hang khong tinh vao lech.
     NV chua nhap hoa don thi hien <b>cho HD</b>, chua tinh la lech. Nguon: he van don, lam moi moi 5 phut.
   </div>
 </div>
@@ -1101,7 +1101,7 @@ select.finp{-webkit-appearance:none;appearance:none;}
   </div>
   <div id="dsList"></div>
   <div style="padding:10px 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
-    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Doi + Tang &minus; Thu hoi</b> (hoa don NV giao).
+    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Tang &minus; Thu hoi</b> (hoa don NV giao). Doi ngang hang khong tinh vao lech.
     NV chua nhap hoa don thi hien <b>cho HD</b>, chua tinh la lech. Nguon: he van don, lam moi moi 5 phut.
   </div>
 </div>
@@ -1637,7 +1637,7 @@ function renderReport(){
   dls.forEach(function(d){d.products.forEach(function(p){if(!p.name)return;var t=spTenChuan(p.name);ensureStock(t);stockMap[t].ban_le+=(p.qty||0);});});
 
   // -- Section 1: Hang giao + doi soat hoa don truc tiep --
-  // Cot HD = so da giao theo hoa don NV (Ban + Doi + Tang - Thu hoi, tab HoaDon
+  // Nhom HD = so tren hoa don NV (Giao + Tang - Thu hoi; Doi ngang hang khong tinh, tab HoaDon
   // sheet van-don-sale, qua doi_soat_kho). Quy ve CAI cho cung don vi voi so kho.
   // LECH = (Di - Ve) - HD. NV chua nhap hoa don -> cot HD hien "--".
   var dsRpt=dsLay(rptNgay);
@@ -2349,7 +2349,19 @@ function dsGop(d){
     }
   });
   var kq={}; for(var f2 in d){ if(d.hasOwnProperty(f2)) kq[f2]=d[f2]; }
-  kq.tonKho=thutu.map(function(k){ return gop[k]; });
+  kq.tonKho=thutu.map(function(k){
+    var r=gop[k];
+    // Cong thuc Toan chot 29/07: (Di - Ve) = Giao + Tang - Thu hoi.
+    // DOI la doi ngang hang (hang cu ve bu hang moi ra) -> KHONG tinh vao lech.
+    // Chi tinh lai khi backend co breakdown; khong co thi giu so backend.
+    var coBd = r.hdGiao!=null || r.hdDoi!=null || r.hdTang!=null || r.hdThu!=null;
+    if(coBd){
+      r.giaoHD=(r.hdGiao||0)+(r.hdTang||0)-(r.hdThu||0);
+      r.khoDaGiao=(r.khoDi||0)-(r.khoVe||0);
+      r.delta=r.khoDaGiao-r.giaoHD;
+    }
+    return r;
+  });
   return kq;
 }
 function hdDaNhan(){ return ld('kho_hd_nhan',[]); }
@@ -2750,7 +2762,7 @@ function hdNhanMot(kieu,d,btn){
    SO KHOP KHO - HOA DON  +  CHUONG THONG BAO  (v2.7)
    Nguon so khop: lenh doi_soat_ngay tren backend van don -
    server da doc Sheet kho, doc hoa don NV giao va tinh san
-   delta = (mang di - mang ve) - (Giao + Doi + Tang - Thu hoi).
+   delta = (mang di - mang ve) - (Giao + Tang - Thu hoi). Doi ngang hang khong tinh.
    App chi goi ve va hien thi, khong tu tinh lai.
    ============================================================ */
 /* Backend van-don-sale (he MOI) - noi app giao-hang day hoa don vao tab HoaDon.
