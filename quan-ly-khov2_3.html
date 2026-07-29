@@ -1645,7 +1645,7 @@ function renderReport(){
   var hdMap={};   // nvNorm -> spNorm -> {nv, sp, hdCai, lechCai}
   if(dsRpt&&dsRpt.ok){
     (dsRpt.tonKho||[]).forEach(function(r){
-      var nk=hdNorm(r.nguoiGiao), sk=spKhoa(r.sanPham), cpt=r.caiPerTui||1;
+      var nk=nvKhoa(r.nguoiGiao), sk=spKhoa(r.sanPham), cpt=r.caiPerTui||1;
       if(!hdMap[nk])hdMap[nk]={};
       hdMap[nk][sk]={ nv:r.nguoiGiao, sp:r.sanPham,
         hdCai:Math.round((r.giaoHD||0)*cpt),
@@ -1656,7 +1656,7 @@ function renderReport(){
         lechCai:Math.round((r.delta||0)*cpt) };
     });
   }
-  function nvCoHD(nv){ return !!(dsPt&&dsPt.coHD&&dsPt.coHD[nv]); }
+  function nvCoHD(nv){ return !!(dsPt&&dsPt.coHD&&dsPt.coHD[nvKhoa(nv)]); }
 
   var c1=document.createElement('div');c1.className='rpt-card';
   var h1=document.createElement('div');h1.className='rpt-hd';h1.textContent='Hang giao - doi soat hoa don';c1.appendChild(h1);
@@ -1666,7 +1666,7 @@ function renderReport(){
   hangs.forEach(function(h){var g=h.gh||'?';if(!ghMap[g])ghMap[g]={};h.products.forEach(function(p){if(!p.name)return;var sk0=spKhoa(p.name);if(!ghMap[g][sk0])ghMap[g][sk0]={ten:spTenChuan(p.name),'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};ghMap[g][sk0][p.st]=(ghMap[g][sk0][p.st]||0)+(p.qty||0);});});
   for(var nk1 in hdMap){
     if(!hdMap.hasOwnProperty(nk1))continue;
-    var daCoNV=Object.keys(ghMap).some(function(g){return hdNorm(g)===nk1;});
+    var daCoNV=Object.keys(ghMap).some(function(g){return nvKhoa(g)===nk1;});
     if(!daCoNV){
       var vd=hdMap[nk1][Object.keys(hdMap[nk1])[0]];
       if(vd) ghMap[vd.nv]=ghMap[vd.nv]||{};
@@ -1677,7 +1677,7 @@ function renderReport(){
   }
   else{
     Object.keys(ghMap).sort().forEach(function(g){
-      var nk=hdNorm(g), coHD=nvCoHD(g);
+      var nk=nvKhoa(g), coHD=nvCoHD(g);
       var gHd=document.createElement('div');gHd.className='rpt-sub-hd blue';
       gHd.textContent=g+(coHD?'':' - chua co hoa don');c1.appendChild(gHd);
 
@@ -2321,13 +2321,22 @@ function spTenChuan(s){
 }
 function spKhoa(s){ return hdNorm(spTenChuan(s)); }
 dmNap();
+
+/* ---- Dong bo ten nhan vien giua kho <-> hoa don ----
+   Kho go "Long", hoa don ghi "NN LONG" -> cung 1 nguoi.
+   Khoa = ten rieng cuoi cung, bo dau, thuong ("nn long" -> "long").
+   Hien thi: uu tien ten ngan nhat trong nhom (ten goi quen thuoc). */
+function nvKhoa(s){
+  var t=hdTok(s);
+  return t.length ? t[t.length-1] : hdNorm(s);
+}
 /* Gop cac dong doi soat cung NV + cung SP (sau alias): cong don so, ten quy chuan */
 var DS_SO_CONG=['khoDi','khoVe','khoDaGiao','giaoHD','delta','hdGiao','hdDoi','hdTang','hdThu'];
 function dsGop(d){
   if(!d || !d.ok || !d.tonKho) return d;
   var gop={}, thutu=[];
   d.tonKho.forEach(function(r){
-    var k=hdNorm(r.nguoiGiao)+'|'+spKhoa(r.sanPham);
+    var k=nvKhoa(r.nguoiGiao)+'|'+spKhoa(r.sanPham);
     if(!gop[k]){
       var c={}; for(var f in r){ if(r.hasOwnProperty(f)) c[f]=r[f]; }
       c.sanPham=spTenChuan(r.sanPham);
@@ -2335,6 +2344,8 @@ function dsGop(d){
     } else {
       DS_SO_CONG.forEach(function(f){ gop[k][f]=(gop[k][f]||0)+(r[f]||0); });
       if((r.caiPerTui||1)>(gop[k].caiPerTui||1)) gop[k].caiPerTui=r.caiPerTui;
+      var tenR=String(r.nguoiGiao||'');
+      if(tenR && tenR.length<String(gop[k].nguoiGiao||'').length) gop[k].nguoiGiao=tenR;
     }
   });
   var kq={}; for(var f2 in d){ if(d.hasOwnProperty(f2)) kq[f2]=d[f2]; }
@@ -2787,10 +2798,10 @@ function dsTai(ngay, hienThi, cb){
 function dsPhanTich(d){
   var coHD={}, lech=[], choHD=[];
   var rows=(d&&d.tonKho)||[];
-  rows.forEach(function(r){ if((r.giaoHD||0)>0) coHD[r.nguoiGiao]=1; });
+  rows.forEach(function(r){ if((r.giaoHD||0)>0) coHD[nvKhoa(r.nguoiGiao)]=1; });
   rows.forEach(function(r){
     if(Math.abs(r.delta||0)<=0.001) return;
-    if(coHD[r.nguoiGiao]) lech.push(r); else choHD.push(r);
+    if(coHD[nvKhoa(r.nguoiGiao)]) lech.push(r); else choHD.push(r);
   });
   return {lech:lech, choHD:choHD, coHD:coHD};
 }
@@ -2825,7 +2836,7 @@ function dsVe(ngay){
   Object.keys(nvs).sort().forEach(function(nv){
     var ds=nvs[nv];
     var lechNV=ds.filter(function(r){ return Math.abs(r.delta||0)>0.001; });
-    var coHD=!!pt.coHD[nv];
+    var coHD=!!pt.coHD[nvKhoa(nv)];
     var card=document.createElement('div'); card.className='ecard'; card.style.cursor='default';
     var head=document.createElement('div'); head.className='ecard-h';
     var t=document.createElement('div'); t.style.cssText='flex:1;font-size:13.5px;font-weight:600;'; t.textContent=nv;
