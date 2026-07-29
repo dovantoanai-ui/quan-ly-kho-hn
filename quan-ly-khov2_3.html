@@ -1883,15 +1883,13 @@ function renderReport(){
 
   // -- Section 5: DOI SOAT TONG THEO MA - kho vs hoa don (toan cong ty) --
   // Moi ma SP 1 dong, cong don TAT CA nhan vien:
-  //   Kho: Mang di | Mang ve | Ban le   (so kho tu ghi, don vi cai)
+  //   Kho: Mang di | Mang ve            (so kho tu ghi, don vi cai)
   //   Hoa don: Giao | Tang | Thu        (NV viet hoa don, da quy ve cai)
   //   Lech = (Di - Ve) - (Giao + Tang - Thu). Doi ngang hang khong tinh.
-  //   Ban le khong vao cong thuc lech (ban tai kho, khong qua hoa don NV).
+  //   Ban le tu kho KHONG vao hoa don giao hang -> bo khoi bang nay (Toan chot 29/07);
+  //   so ban le xem o muc SL ban va Ton cuoi ngay.
   var tsMap={};
-  function tsSlot(p){ if(!tsMap[p]) tsMap[p]={di:0,ve:0,banLe:0,giao:0,tang:0,thu:0}; return tsMap[p]; }
-  Object.keys(stockMap).forEach(function(p){
-    if(stockMap[p].ban_le) tsSlot(p).banLe+=stockMap[p].ban_le;
-  });
+  function tsSlot(p){ if(!tsMap[p]) tsMap[p]={di:0,ve:0,giao:0,tang:0,thu:0}; return tsMap[p]; }
   hangs.forEach(function(h){ h.products.forEach(function(p){
     if(!p.name) return;
     var s=tsSlot(spTenChuan(p.name)), q=p.qty||0;
@@ -1921,32 +1919,30 @@ function renderReport(){
     var th5=document.createElement('thead');
     th5.innerHTML='<tr>'+
         '<th class="ds-nm" rowspan="2">San pham</th>'+
-        '<th class="ds-grp ds-g1" colspan="3">Kho</th>'+
+        '<th class="ds-grp ds-g1" colspan="2">Kho</th>'+
         '<th class="ds-grp ds-g1" colspan="3">Hoa don</th>'+
         '<th class="ds-g1" rowspan="2" style="color:var(--re);">Lech</th>'+
       '</tr>'+
       '<tr>'+
         '<th class="ds-g1" style="color:var(--bl);">Di</th>'+
         '<th style="color:var(--or);">Ve</th>'+
-        '<th style="color:var(--pu);">Ban le</th>'+
         '<th class="ds-g1" style="color:var(--gr);">Giao</th>'+
         '<th style="color:var(--gr);">Tang</th>'+
         '<th style="color:var(--gr);">Thu</th>'+
       '</tr>';
     tb5.appendChild(th5);
     var tbd5=document.createElement('tbody');
-    var tsTong={di:0,ve:0,banLe:0,giao:0,tang:0,thu:0,lech:0};
+    var tsTong={di:0,ve:0,giao:0,tang:0,thu:0,lech:0};
     function tdS(val,color,dam,cls){var td=document.createElement('td');if(cls)td.className=cls;if(color)td.style.color=color;if(dam){td.style.fontWeight='800';}td.textContent=val;return td;}
     tsKeys.forEach(function(prod){
       var s=tsMap[prod];
       var lech=(s.di-s.ve)-(s.giao+s.tang-s.thu);
-      tsTong.di+=s.di; tsTong.ve+=s.ve; tsTong.banLe+=s.banLe;
+      tsTong.di+=s.di; tsTong.ve+=s.ve;
       tsTong.giao+=s.giao; tsTong.tang+=s.tang; tsTong.thu+=s.thu; tsTong.lech+=lech;
       var tr=document.createElement('tr');
       var tdN=document.createElement('td');tdN.className='ds-nm';tdN.textContent=prod;tr.appendChild(tdN);
       tr.appendChild(tdS(fmt(s.di),'var(--bl)',false,'ds-g1'));
       tr.appendChild(tdS(fmt(s.ve),'var(--or)'));
-      tr.appendChild(tdS(fmt(s.banLe),'var(--pu)'));
       if(!coHDNao){
         tr.appendChild(tdS('--','var(--mu)',false,'ds-g1'));
         tr.appendChild(tdS('--','var(--mu)'));
@@ -1964,7 +1960,6 @@ function renderReport(){
     var tdT=document.createElement('td');tdT.className='ds-nm';tdT.style.fontWeight='800';tdT.style.background='#e8eef5';tdT.textContent='TONG CONG TY';trT.appendChild(tdT);
     trT.appendChild(tdS(fmt(tsTong.di),'var(--bl)',true,'ds-g1'));
     trT.appendChild(tdS(fmt(tsTong.ve),'var(--or)',true));
-    trT.appendChild(tdS(fmt(tsTong.banLe),'var(--pu)',true));
     if(!coHDNao){
       trT.appendChild(tdS('--','var(--mu)',true,'ds-g1'));
       trT.appendChild(tdS('--','var(--mu)',true));
@@ -1983,7 +1978,7 @@ function renderReport(){
     var ghiChu5=document.createElement('div');
     ghiChu5.style.cssText='padding:8px 14px;font-size:11px;color:var(--mu);line-height:1.5;';
     ghiChu5.textContent=coHDNao
-      ? 'Lech = (Di - Ve) - (Giao + Tang - Thu). Doi ngang hang va Ban le khong vao cong thuc lech.'
+      ? 'Lech = (Di - Ve) - (Giao + Tang - Thu). Doi ngang hang khong tinh. Ban le tai kho khong vao hoa don - xem o muc Ton cuoi ngay.'
       : 'NV chua nhap hoa don len he van don - cot Hoa don va Lech se tu hien khi co hoa don.';
     c5.appendChild(ghiChu5);
   }
