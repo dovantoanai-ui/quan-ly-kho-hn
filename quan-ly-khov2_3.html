@@ -1983,6 +1983,83 @@ function renderReport(){
     c5.appendChild(ghiChu5);
   }
   el.appendChild(c5);
+
+  // -- Section 6: DOI SOAT THU HOI - kho vs hoa don --
+  // Thu hoi kho ghi (phieu Hang giao, trang thai Thu hoi) phai KHOP
+  // thu hoi NV viet tren hoa don (hdThu, quy ve cai). Lech = Kho - Hoa don.
+  var thMap={};
+  function thSlot(p){ if(!thMap[p]) thMap[p]={kho:0,hd:0}; return thMap[p]; }
+  hangs.forEach(function(h){ h.products.forEach(function(p){
+    if(!p.name || p.st!=='Thu hoi') return;
+    thSlot(spTenChuan(p.name)).kho += (p.qty||0);
+  }); });
+  for(var nk6 in hdMap){
+    if(!hdMap.hasOwnProperty(nk6)) continue;
+    for(var sk6 in hdMap[nk6]){
+      if(!hdMap[nk6].hasOwnProperty(sk6)) continue;
+      var r6=hdMap[nk6][sk6];
+      if(r6.thu) thSlot(spTenChuan(r6.sp)).hd += r6.thu;
+    }
+  }
+  var thKeys=Object.keys(thMap).filter(function(p){ return thMap[p].kho||thMap[p].hd; }).sort();
+  var c6=document.createElement('div');c6.className='rpt-card';
+  var h6=document.createElement('div');h6.className='rpt-hd';
+  h6.style.cssText='padding:11px 14px;background:linear-gradient(90deg,var(--pu),#5b21b6);color:#fff;font-size:13px;font-weight:600;';
+  h6.textContent='Doi soat THU HOI - kho vs hoa don';c6.appendChild(h6);
+  if(!thKeys.length){
+    var e6=document.createElement('div');e6.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e6.textContent='Khong co thu hoi ngay nay';c6.appendChild(e6);
+  } else {
+    var wrap6=document.createElement('div');wrap6.className='ds-wrap';
+    var tb6=document.createElement('table');tb6.className='ds-tab';
+    var th6=document.createElement('thead');
+    th6.innerHTML='<tr>'+
+      '<th class="ds-nm">San pham</th>'+
+      '<th class="ds-g1" style="color:var(--pu);">Kho thu ve</th>'+
+      '<th class="ds-g1" style="color:var(--gr);">Hoa don ghi</th>'+
+      '<th class="ds-g1" style="color:var(--re);">Lech</th>'+
+    '</tr>';
+    tb6.appendChild(th6);
+    var tbd6=document.createElement('tbody');
+    var t6={kho:0,hd:0};
+    function tdT6(val,color,dam,cls){var td=document.createElement('td');if(cls)td.className=cls;if(color)td.style.color=color;if(dam)td.style.fontWeight='800';td.textContent=val;return td;}
+    thKeys.forEach(function(prod){
+      var s=thMap[prod], lech=s.kho-s.hd;
+      t6.kho+=s.kho; t6.hd+=s.hd;
+      var tr=document.createElement('tr');
+      var tdN=document.createElement('td');tdN.className='ds-nm';tdN.textContent=prod;tr.appendChild(tdN);
+      tr.appendChild(tdT6(fmt(s.kho),'var(--pu)',false,'ds-g1'));
+      if(!coHDNao){
+        tr.appendChild(tdT6('--','var(--mu)',false,'ds-g1'));
+        tr.appendChild(tdT6('--','var(--mu)',false,'ds-g1'));
+      } else {
+        tr.appendChild(tdT6(fmt(s.hd),'var(--gr)',false,'ds-g1'));
+        tr.appendChild(tdT6((lech>0?'+':'')+fmt(lech), lech===0?'var(--gr)':'var(--re)', true,'ds-g1'));
+      }
+      tbd6.appendChild(tr);
+    });
+    var trT6=document.createElement('tr');trT6.className='ds-tong';
+    var tdT6n=document.createElement('td');tdT6n.className='ds-nm';tdT6n.style.fontWeight='800';tdT6n.style.background='#e8eef5';tdT6n.textContent='TONG';trT6.appendChild(tdT6n);
+    trT6.appendChild(tdT6(fmt(t6.kho),'var(--pu)',true,'ds-g1'));
+    if(!coHDNao){
+      trT6.appendChild(tdT6('--','var(--mu)',true,'ds-g1'));
+      trT6.appendChild(tdT6('--','var(--mu)',true,'ds-g1'));
+    } else {
+      var lech6=t6.kho-t6.hd;
+      trT6.appendChild(tdT6(fmt(t6.hd),'var(--gr)',true,'ds-g1'));
+      trT6.appendChild(tdT6((lech6>0?'+':'')+fmt(lech6), lech6===0?'var(--gr)':'var(--re)', true,'ds-g1'));
+    }
+    tbd6.appendChild(trT6);
+    tb6.appendChild(tbd6);
+    wrap6.appendChild(tb6);
+    c6.appendChild(wrap6);
+    var gc6=document.createElement('div');
+    gc6.style.cssText='padding:8px 14px;font-size:11px;color:var(--mu);line-height:1.5;';
+    gc6.textContent=coHDNao
+      ? 'Lech = Kho thu ve - Hoa don ghi thu hoi (quy ve cai). Khop thi bang 0.'
+      : 'NV chua nhap hoa don - cot Hoa don va Lech se tu hien khi co hoa don.';
+    c6.appendChild(gc6);
+  }
+  el.appendChild(c6);
 }
 
 // ZALO
