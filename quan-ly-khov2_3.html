@@ -178,13 +178,16 @@ select.finp{-webkit-appearance:none;appearance:none;}
 .rpt-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;min-width:46px;text-align:right;}
 /* bang doi soat tach nhom cot KHO | HOA DON | LECH */
 .ds-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.ds-tab{border-collapse:collapse;width:100%;min-width:520px;}
-.ds-tab th,.ds-tab td{padding:6px 5px;font-size:12px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;}
+.ds-tab{border-collapse:collapse;width:100%;min-width:560px;}
+.ds-tab th,.ds-tab td{padding:8px 12px;font-size:12.5px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;min-width:54px;}
 .ds-tab th{font-size:9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;background:#f8fafb;}
-.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:96px;min-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab tbody tr:nth-child(even) td{background:#f8fafb;}
+.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:120px;min-width:90px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab tbody tr:nth-child(even) td.ds-nm{background:#f8fafb;}
 .ds-tab th.ds-nm{background:#f8fafb;font-size:9px;font-weight:700;}
 .ds-tab .ds-g1{border-left:2px solid var(--bd);}
 .ds-tab .ds-grp{text-align:center;}
+.ds-tab tr.ds-tong td{background:#e8eef5;font-weight:800;border-top:2px solid var(--bd);}
 .rpt-tot{display:flex;align-items:center;padding:10px 14px;background:#f0f4fa;border-top:1.5px solid var(--bd2);}
 .rpt-tot-lbl{flex:1;font-size:13px;font-weight:600;color:var(--mu);}
 .rpt-tot-v{font-size:13px;font-weight:700;min-width:46px;text-align:right;}
@@ -741,13 +744,16 @@ select.finp{-webkit-appearance:none;appearance:none;}
 .rpt-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;min-width:46px;text-align:right;}
 /* bang doi soat tach nhom cot KHO | HOA DON | LECH */
 .ds-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.ds-tab{border-collapse:collapse;width:100%;min-width:520px;}
-.ds-tab th,.ds-tab td{padding:6px 5px;font-size:12px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;}
+.ds-tab{border-collapse:collapse;width:100%;min-width:560px;}
+.ds-tab th,.ds-tab td{padding:8px 12px;font-size:12.5px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;min-width:54px;}
 .ds-tab th{font-size:9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;background:#f8fafb;}
-.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:96px;min-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab tbody tr:nth-child(even) td{background:#f8fafb;}
+.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:120px;min-width:90px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab tbody tr:nth-child(even) td.ds-nm{background:#f8fafb;}
 .ds-tab th.ds-nm{background:#f8fafb;font-size:9px;font-weight:700;}
 .ds-tab .ds-g1{border-left:2px solid var(--bd);}
 .ds-tab .ds-grp{text-align:center;}
+.ds-tab tr.ds-tong td{background:#e8eef5;font-weight:800;border-top:2px solid var(--bd);}
 .rpt-tot{display:flex;align-items:center;padding:10px 14px;background:#f0f4fa;border-top:1.5px solid var(--bd2);}
 .rpt-tot-lbl{flex:1;font-size:13px;font-weight:600;color:var(--mu);}
 .rpt-tot-v{font-size:13px;font-weight:700;min-width:46px;text-align:right;}
@@ -1872,10 +1878,10 @@ function renderReport(){
   // Moi SP 1 dong (da quy ten chuan): Nhap | Xuat | Di | Ve | Ban | Thu hoi.
   // Dong TONG cuoi = so cong ty.
   var tsMap={};
-  function tsSlot(p){ if(!tsMap[p]) tsMap[p]={nhap:0,xuat:0,di:0,ve:0,ban:0,thu:0}; return tsMap[p]; }
+  function tsSlot(p){ if(!tsMap[p]) tsMap[p]={nhap:0,xuat:0,di:0,ve:0,banLe:0,banHD:0,thu:0}; return tsMap[p]; }
   Object.keys(stockMap).forEach(function(p){
     var v=stockMap[p], s=tsSlot(p);
-    s.nhap+=v.nhap; s.xuat+=v.xuat_kho; s.ban+=v.ban_le;
+    s.nhap+=v.nhap; s.xuat+=v.xuat_kho; s.banLe+=v.ban_le;
   });
   hangs.forEach(function(h){ h.products.forEach(function(p){
     if(!p.name) return;
@@ -1884,13 +1890,14 @@ function renderReport(){
     else if(p.st==='Mang ve') s.ve+=q;
     else if(p.st==='Thu hoi') s.thu+=q;
   }); });
-  // Ban = ban le tai kho (don le) + Giao tren hoa don NV (da quy ve cai o hdMap)
+  // Ban le = don le tai kho. Ban HD = Giao tren hoa don NV (da quy ve cai o hdMap).
+  // Luu y: Ban HD chi co so khi NV da nhap hoa don len sheet van-don-sale.
   for(var nk5 in hdMap){
     if(!hdMap.hasOwnProperty(nk5)) continue;
     for(var sk5 in hdMap[nk5]){
       if(!hdMap[nk5].hasOwnProperty(sk5)) continue;
       var r5=hdMap[nk5][sk5];
-      tsSlot(spTenChuan(r5.sp)).ban += (r5.giao||0);
+      tsSlot(spTenChuan(r5.sp)).banHD += (r5.giao||0);
     }
   }
   var c5=document.createElement('div');c5.className='rpt-card';
@@ -1910,38 +1917,45 @@ function renderReport(){
       '<th style="color:var(--re);">Xuat</th>'+
       '<th class="ds-g1" style="color:var(--bl);">Di</th>'+
       '<th style="color:var(--or);">Ve</th>'+
-      '<th class="ds-g1" style="color:var(--pu);">Ban</th>'+
-      '<th style="color:var(--am);">Thu hoi</th>'+
+      '<th class="ds-g1" style="color:var(--pu);">Ban le</th>'+
+      '<th style="color:var(--pu);">Ban HD</th>'+
+      '<th class="ds-g1" style="color:var(--am);">Thu hoi</th>'+
     '</tr>';
     tb5.appendChild(th5);
     var tbd5=document.createElement('tbody');
-    var tsTong={nhap:0,xuat:0,di:0,ve:0,ban:0,thu:0};
+    var tsTong={nhap:0,xuat:0,di:0,ve:0,banLe:0,banHD:0,thu:0};
     function tdS(val,color,dam,cls){var td=document.createElement('td');if(cls)td.className=cls;if(color)td.style.color=color;if(dam){td.style.fontWeight='800';}td.textContent=val;return td;}
     tsKeys.forEach(function(prod){
       var s=tsMap[prod];
-      tsTong.nhap+=s.nhap; tsTong.xuat+=s.xuat; tsTong.di+=s.di; tsTong.ve+=s.ve; tsTong.ban+=s.ban; tsTong.thu+=s.thu;
+      tsTong.nhap+=s.nhap; tsTong.xuat+=s.xuat; tsTong.di+=s.di; tsTong.ve+=s.ve; tsTong.banLe+=s.banLe; tsTong.banHD+=s.banHD; tsTong.thu+=s.thu;
       var tr=document.createElement('tr');
       var tdN=document.createElement('td');tdN.className='ds-nm';tdN.textContent=prod;tr.appendChild(tdN);
       tr.appendChild(tdS(fmt(s.nhap),'var(--gr)',false,'ds-g1'));
       tr.appendChild(tdS(fmt(s.xuat),'var(--re)'));
       tr.appendChild(tdS(fmt(s.di),'var(--bl)',false,'ds-g1'));
       tr.appendChild(tdS(fmt(s.ve),'var(--or)'));
-      tr.appendChild(tdS(fmt(s.ban),'var(--pu)',false,'ds-g1'));
-      tr.appendChild(tdS(fmt(s.thu),'var(--am)'));
+      tr.appendChild(tdS(fmt(s.banLe),'var(--pu)',false,'ds-g1'));
+      tr.appendChild(tdS(fmt(s.banHD),'var(--pu)'));
+      tr.appendChild(tdS(fmt(s.thu),'var(--am)',false,'ds-g1'));
       tbd5.appendChild(tr);
     });
-    var trT=document.createElement('tr');trT.style.background='#f1f5f9';
-    var tdT=document.createElement('td');tdT.className='ds-nm';tdT.style.fontWeight='800';tdT.style.background='#f1f5f9';tdT.textContent='TONG CONG TY';trT.appendChild(tdT);
+    var trT=document.createElement('tr');trT.className='ds-tong';
+    var tdT=document.createElement('td');tdT.className='ds-nm';tdT.style.fontWeight='800';tdT.style.background='#e8eef5';tdT.textContent='TONG CONG TY';trT.appendChild(tdT);
     trT.appendChild(tdS(fmt(tsTong.nhap),'var(--gr)',true,'ds-g1'));
     trT.appendChild(tdS(fmt(tsTong.xuat),'var(--re)',true));
     trT.appendChild(tdS(fmt(tsTong.di),'var(--bl)',true,'ds-g1'));
     trT.appendChild(tdS(fmt(tsTong.ve),'var(--or)',true));
-    trT.appendChild(tdS(fmt(tsTong.ban),'var(--pu)',true,'ds-g1'));
-    trT.appendChild(tdS(fmt(tsTong.thu),'var(--am)',true));
+    trT.appendChild(tdS(fmt(tsTong.banLe),'var(--pu)',true,'ds-g1'));
+    trT.appendChild(tdS(fmt(tsTong.banHD),'var(--pu)',true));
+    trT.appendChild(tdS(fmt(tsTong.thu),'var(--am)',true,'ds-g1'));
     tbd5.appendChild(trT);
     tb5.appendChild(tbd5);
     wrap5.appendChild(tb5);
     c5.appendChild(wrap5);
+    var ghiChu5=document.createElement('div');
+    ghiChu5.style.cssText='padding:8px 14px;font-size:11px;color:var(--mu);line-height:1.5;';
+    ghiChu5.textContent='Ban le = ban tai kho (don le). Ban HD = Giao tren hoa don NV, chi co so sau khi NV nhap hoa don len he van don.';
+    c5.appendChild(ghiChu5);
   }
   el.appendChild(c5);
 }
