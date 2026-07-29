@@ -1159,7 +1159,10 @@ function getProds(){return ld('prods',[]);}function svProds(v){sv('prods',v);}
 var CFG={gh:{get:getGH,save:svGH,mng:'ghMng',cnt:'ghCnt'},nv:{get:getNV,save:svNV,mng:'nvMng',cnt:'nvCnt'},pr:{get:getProds,save:svProds,mng:'prMng',cnt:'prCnt'}};
 var KHO_LIST=['Ha Noi','Thanh Hoa'];
 var HANG_STS=['Mang di','Mang ve','Thu hoi','Tang','Huy'];
-var KHO_STS=['Nhap','Xuat','Tang','Ban','Huy'];
+// Kho KHONG truc tiep xuat hang (Toan chot 29/07) - hang ra kho chi qua:
+// don le / giao hang / sale (chao hang). Bo lua chon 'Xuat' khoi phieu tay;
+// dong 'Xuat' tu dong tu don chao/sale van hien binh thuong (KHO_CLS/BADGE giu).
+var KHO_STS=['Nhap','Tang','Ban','Huy'];
 var PAY_OPT=['Da thanh toan','Chua thanh toan','Thanh toan 1 phan'];
 
 var HANG_CLS={};HANG_CLS['Mang di']='di';HANG_CLS['Mang ve']='ve';HANG_CLS['Thu hoi']='th';HANG_CLS['Tang']='tg';HANG_CLS['Huy']='hy';
@@ -1839,6 +1842,10 @@ function renderReport(){
   var h4=document.createElement('div');h4.className='rpt-hd';
   h4.style.cssText='padding:11px 14px;background:linear-gradient(90deg,var(--gr),#155e34);color:#fff;font-size:13px;font-weight:600;';
   h4.textContent='Ton cuoi ngay = Nhap - Xuat kho - Ban le';c4.appendChild(h4);
+  var gc4=document.createElement('div');
+  gc4.style.cssText='padding:7px 14px;font-size:11px;color:var(--mu);line-height:1.5;border-bottom:.5px solid var(--bd);';
+  gc4.textContent='Xuat kho = don chao hang / sale tu he van don + phieu Tang, Ban, Huy. Kho khong tu ghi phieu xuat tay.';
+  c4.appendChild(gc4);
   var hasStock=Object.keys(stockMap).length>0;
   if(!hasStock){
     var e4=document.createElement('div');e4.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e4.textContent='Chua co du lieu nhap kho hoac ban hang';c4.appendChild(e4);
