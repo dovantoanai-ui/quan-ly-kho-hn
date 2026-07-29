@@ -1867,6 +1867,74 @@ function renderReport(){
     c4.appendChild(totRow);
   }
   el.appendChild(c4);
+
+  // -- Section 5: TONG HOP tat ca nhan vien + cong ty --
+  // Moi SP 1 dong (da quy ten chuan): Nhap | Xuat | Di | Ve | Ban | Thu hoi.
+  // Dong TONG cuoi = so cong ty.
+  var tsMap={};
+  function tsSlot(p){ if(!tsMap[p]) tsMap[p]={nhap:0,xuat:0,di:0,ve:0,ban:0,thu:0}; return tsMap[p]; }
+  Object.keys(stockMap).forEach(function(p){
+    var v=stockMap[p], s=tsSlot(p);
+    s.nhap+=v.nhap; s.xuat+=v.xuat_kho; s.ban+=v.ban_le;
+  });
+  hangs.forEach(function(h){ h.products.forEach(function(p){
+    if(!p.name) return;
+    var s=tsSlot(spTenChuan(p.name)), q=p.qty||0;
+    if(p.st==='Mang di') s.di+=q;
+    else if(p.st==='Mang ve') s.ve+=q;
+    else if(p.st==='Thu hoi') s.thu+=q;
+  }); });
+  var c5=document.createElement('div');c5.className='rpt-card';
+  var h5=document.createElement('div');h5.className='rpt-hd';
+  h5.style.cssText='padding:11px 14px;background:linear-gradient(90deg,#334155,#0f172a);color:#fff;font-size:13px;font-weight:600;';
+  h5.textContent='Tong hop tat ca nhan vien + cong ty';c5.appendChild(h5);
+  var tsKeys=Object.keys(tsMap).sort();
+  if(!tsKeys.length){
+    var e5=document.createElement('div');e5.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e5.textContent='Chua co du lieu ngay nay';c5.appendChild(e5);
+  } else {
+    var wrap5=document.createElement('div');wrap5.className='ds-wrap';
+    var tb5=document.createElement('table');tb5.className='ds-tab';
+    var th5=document.createElement('thead');
+    th5.innerHTML='<tr>'+
+      '<th class="ds-nm">San pham</th>'+
+      '<th class="ds-g1" style="color:var(--gr);">Nhap</th>'+
+      '<th style="color:var(--re);">Xuat</th>'+
+      '<th class="ds-g1" style="color:var(--bl);">Di</th>'+
+      '<th style="color:var(--or);">Ve</th>'+
+      '<th class="ds-g1" style="color:var(--pu);">Ban</th>'+
+      '<th style="color:var(--am);">Thu hoi</th>'+
+    '</tr>';
+    tb5.appendChild(th5);
+    var tbd5=document.createElement('tbody');
+    var tsTong={nhap:0,xuat:0,di:0,ve:0,ban:0,thu:0};
+    function tdS(val,color,dam,cls){var td=document.createElement('td');if(cls)td.className=cls;if(color)td.style.color=color;if(dam){td.style.fontWeight='800';}td.textContent=val;return td;}
+    tsKeys.forEach(function(prod){
+      var s=tsMap[prod];
+      tsTong.nhap+=s.nhap; tsTong.xuat+=s.xuat; tsTong.di+=s.di; tsTong.ve+=s.ve; tsTong.ban+=s.ban; tsTong.thu+=s.thu;
+      var tr=document.createElement('tr');
+      var tdN=document.createElement('td');tdN.className='ds-nm';tdN.textContent=prod;tr.appendChild(tdN);
+      tr.appendChild(tdS(fmt(s.nhap),'var(--gr)',false,'ds-g1'));
+      tr.appendChild(tdS(fmt(s.xuat),'var(--re)'));
+      tr.appendChild(tdS(fmt(s.di),'var(--bl)',false,'ds-g1'));
+      tr.appendChild(tdS(fmt(s.ve),'var(--or)'));
+      tr.appendChild(tdS(fmt(s.ban),'var(--pu)',false,'ds-g1'));
+      tr.appendChild(tdS(fmt(s.thu),'var(--am)'));
+      tbd5.appendChild(tr);
+    });
+    var trT=document.createElement('tr');trT.style.background='#f1f5f9';
+    var tdT=document.createElement('td');tdT.className='ds-nm';tdT.style.fontWeight='800';tdT.style.background='#f1f5f9';tdT.textContent='TONG CONG TY';trT.appendChild(tdT);
+    trT.appendChild(tdS(fmt(tsTong.nhap),'var(--gr)',true,'ds-g1'));
+    trT.appendChild(tdS(fmt(tsTong.xuat),'var(--re)',true));
+    trT.appendChild(tdS(fmt(tsTong.di),'var(--bl)',true,'ds-g1'));
+    trT.appendChild(tdS(fmt(tsTong.ve),'var(--or)',true));
+    trT.appendChild(tdS(fmt(tsTong.ban),'var(--pu)',true,'ds-g1'));
+    trT.appendChild(tdS(fmt(tsTong.thu),'var(--am)',true));
+    tbd5.appendChild(trT);
+    tb5.appendChild(tbd5);
+    wrap5.appendChild(tb5);
+    c5.appendChild(wrap5);
+  }
+  el.appendChild(c5);
 }
 
 // ZALO
