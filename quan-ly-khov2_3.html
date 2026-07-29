@@ -1884,6 +1884,15 @@ function renderReport(){
     else if(p.st==='Mang ve') s.ve+=q;
     else if(p.st==='Thu hoi') s.thu+=q;
   }); });
+  // Ban = ban le tai kho (don le) + Giao tren hoa don NV (da quy ve cai o hdMap)
+  for(var nk5 in hdMap){
+    if(!hdMap.hasOwnProperty(nk5)) continue;
+    for(var sk5 in hdMap[nk5]){
+      if(!hdMap[nk5].hasOwnProperty(sk5)) continue;
+      var r5=hdMap[nk5][sk5];
+      tsSlot(spTenChuan(r5.sp)).ban += (r5.giao||0);
+    }
+  }
   var c5=document.createElement('div');c5.className='rpt-card';
   var h5=document.createElement('div');h5.className='rpt-hd';
   h5.style.cssText='padding:11px 14px;background:linear-gradient(90deg,#334155,#0f172a);color:#fff;font-size:13px;font-weight:600;';
