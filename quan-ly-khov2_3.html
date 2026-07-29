@@ -37,7 +37,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx
 .datebar{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .datetap{display:flex;align-items:center;gap:7px;cursor:pointer;position:relative;}
 .datelbl{font-size:15px;font-weight:600;}
-.dateinp{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
+.dateinp{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;margin:0;}
 .pills{display:flex;gap:5px;flex-wrap:wrap;}
 .pill{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;}
 .pill-b{background:var(--blb);color:var(--bl);}
@@ -74,6 +74,16 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx
 .bbtn:active{opacity:.82;}
 .bbtn-gs{display:flex;align-items:center;justify-content:center;gap:5px;padding:13px;border-radius:11px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;background:#0f9d58;color:#fff;}
 .bbtn-gs:active{opacity:.82;}
+/* Chuong thong bao + man so khop */
+.bellb{position:absolute;top:1px;right:1px;background:#e53935;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.bell-panel{position:fixed;top:56px;left:8px;right:8px;max-width:430px;margin-left:auto;background:var(--sf);border:1px solid var(--bd);border-radius:13px;box-shadow:0 8px 26px rgba(0,0,0,.18);z-index:130;display:none;overflow:hidden;}
+.bell-panel.on{display:block;}
+.bell-it{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:12.5px;line-height:1.45;font-weight:500;}
+.bell-it:last-child{border-bottom:none;}
+.bell-it:active{background:var(--bg);}
+.bell-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ds-bd{display:flex;justify-content:space-between;gap:8px;padding:5px 0;align-items:center;border-bottom:1px dashed var(--bd);}
+.ds-bd:last-child{border-bottom:none;}
 .gs-dot{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block;}
 .gs-dot.syncing{animation:pulse .7s infinite alternate;}
 @keyframes pulse{to{opacity:.3;}}
@@ -166,6 +176,15 @@ select.finp{-webkit-appearance:none;appearance:none;}
 .rpt-name{flex:1;font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .rpt-v{font-size:13px;font-weight:600;min-width:46px;text-align:right;}
 .rpt-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;min-width:46px;text-align:right;}
+/* bang doi soat tach nhom cot KHO | HOA DON | LECH */
+.ds-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.ds-tab{border-collapse:collapse;width:100%;min-width:520px;}
+.ds-tab th,.ds-tab td{padding:6px 5px;font-size:12px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;}
+.ds-tab th{font-size:9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;background:#f8fafb;}
+.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:96px;min-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab th.ds-nm{background:#f8fafb;font-size:9px;font-weight:700;}
+.ds-tab .ds-g1{border-left:2px solid var(--bd);}
+.ds-tab .ds-grp{text-align:center;}
 .rpt-tot{display:flex;align-items:center;padding:10px 14px;background:#f0f4fa;border-top:1.5px solid var(--bd2);}
 .rpt-tot-lbl{flex:1;font-size:13px;font-weight:600;color:var(--mu);}
 .rpt-tot-v{font-size:13px;font-weight:700;min-width:46px;text-align:right;}
@@ -208,6 +227,7 @@ select.finp{-webkit-appearance:none;appearance:none;}
 <div class="sc on" id="s-home">
   <div class="tb">
     <div style="flex:1"><div class="tb-ttl">Quan Ly Kho</div></div>
+    <button class="tb-btn" id="bellBtn" onclick="toggleBell()" style="padding:7px 9px;position:relative;">&#128276;<span class="bellb" id="bellCnt">0</span></button>
     <button class="tb-btn" onclick="goReport()">Bao cao</button>
     <button class="tb-btn" onclick="goHistory()" style="padding:7px 9px;">&#128336;</button>
     <button class="tb-btn" onclick="goSettings()" style="padding:7px 9px;">&#9881;</button>
@@ -218,7 +238,7 @@ select.finp{-webkit-appearance:none;appearance:none;}
     <button class="tnav" id="tn2" onclick="switchTab(2)">Don le</button>
   </div>
   <div class="datebar">
-    <div class="datetap" onclick="document.getElementById('dInp').click()">
+    <div class="datetap" onclick="moLich('dInp')">
       <span class="datelbl" id="dLbl"></span>
       <span style="color:var(--mu);font-size:11px;">&#9660;</span>
       <input type="date" id="dInp" class="dateinp" onchange="onDateChange()">
@@ -366,7 +386,18 @@ select.finp{-webkit-appearance:none;appearance:none;}
   <div class="tb">
     <button class="tb-back" onclick="goHome()">&#8592;</button>
     <div style="flex:1"><div class="tb-ttl">Bao cao ngay</div><div class="tb-sub" id="rptLbl"></div></div>
+    <button class="tb-btn" onclick="goTon()">Ton kho</button>
+    <button class="tb-btn" onclick="xuatExcelBaoCao()">Excel</button>
     <button class="tb-btn" onclick="copyZaloRpt()">Zalo</button>
+  </div>
+  <div class="datebar">
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="rptDoiNgay(-1)">&#8249;</button>
+    <div class="datetap" onclick="moLich('rptInp')">
+      <span class="datelbl" id="rptLbl2"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="rptInp" class="dateinp" onchange="rptChonNgay()">
+    </div>
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="rptDoiNgay(1)">&#8250;</button>
   </div>
   <div id="rptContent" style="padding-bottom:20px;"></div>
 </div>
@@ -462,6 +493,621 @@ select.finp{-webkit-appearance:none;appearance:none;}
   </div>
 </div>
 
+<!-- TON KHO -->
+<div class="sc" id="s-ton">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">Ton kho</div><div class="tb-sub" id="tonSub"></div></div>
+    <button class="tb-btn" onclick="KD_CACHE=null;goTon()">Tai lai</button>
+  </div>
+  <div class="datebar">
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="tonDoiNgay(-1)">&#8249;</button>
+    <div class="datetap" onclick="moLich('tonInp')">
+      <span class="datelbl" id="tonLbl"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="tonInp" class="dateinp" onchange="tonChonNgay()">
+    </div>
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="tonDoiNgay(1)">&#8250;</button>
+  </div>
+  <div style="padding:10px 10px 0;">
+    <input class="ainp" id="tonTim" type="text" placeholder="Tim san pham..." oninput="veTon()" style="width:100%;">
+  </div>
+  <div id="tonList" style="padding:8px 10px 10px;"></div>
+  <div style="padding:0 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
+    Ton = <b>Nhap &minus; Xuat kho &minus; Ban le</b>, cong don toan bo lich su Sheet kho
+    + phieu tren may chua day (giong cong thuc bao cao). Hang giao mang di / mang ve khong tru vao ton.
+    Neu so ton khong khop thuc te, kha nang Sheet thieu du lieu giai doan cu - noi em them chuc nang chot kiem ke.
+  </div>
+</div>
+
+<!-- SO KHOP KHO - HOA DON -->
+<div class="sc" id="s-dsoat">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">So khop kho - hoa don</div><div class="tb-sub" id="dsSub"></div></div>
+    <button class="tb-btn" onclick="dsTaiLai()">Tai lai</button>
+  </div>
+  <div class="datebar" style="flex-direction:column;align-items:stretch;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="dsDoiThang(-1)">&#8249;</button>
+      <div class="datelbl" id="dsThangLbl"></div>
+      <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="dsDoiThang(1)">&#8250;</button>
+    </div>
+    <div id="dsStrip" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
+    <div class="pills" id="dsPills"></div>
+  </div>
+  <div id="dsList"></div>
+  <div style="padding:10px 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
+    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Doi + Tang &minus; Thu hoi</b> (hoa don NV giao).
+    NV chua nhap hoa don thi hien <b>cho HD</b>, chua tinh la lech. Nguon: he van don, lam moi moi 5 phut.
+  </div>
+</div>
+
+<div class="bell-panel" id="bellPanel"></div>
+
+<!-- GG SHEET MODAL -->
+<div class="overlay" id="gsOverlay" onclick="if(event.target===this)closeGS()">
+  <div class="modal">
+    <div class="modal-ttl">Ket noi Google Sheet</div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.6;">Dan URL Google Apps Script vao day de dong bo du lieu.</div>
+    <input type="text" id="gsUrlInp" placeholder="https://script.google.com/macros/s/..."
+      style="width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid var(--bd2);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;background:var(--bg);color:var(--tx);margin-bottom:12px;outline:none;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveGsUrl()" style="flex:1;padding:13px;border-radius:10px;border:none;background:#0f9d58;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Luu & Ket noi</button>
+      <button onclick="closeGS()" style="padding:13px 16px;border-radius:10px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;cursor:pointer;">Huy</button>
+    </div>
+  </div>
+</div>
+<!-- EXCEL MODAL iOS -->
+<div class="overlay" id="xlOv">
+  <div class="modal">
+    <div class="modal-ttl">Luu file Excel</div>
+    <div style="font-size:13px;color:var(--mu);line-height:1.75;margin-bottom:16px;">Nhan Mo file, sau do nhan Share roi chon Save to Files</div>
+    <a id="xlLink" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;padding:14px;border-radius:11px;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;font-weight:600;text-decoration:none;margin-bottom:10px;">Mo file Excel</a>
+    <button onclick="document.getElementById('xlOv').classList.remove('on')" style="width:100%;padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;cursor:pointer;">Dong</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#eef2f7;--sf:#fff;--bd:#dce5f0;--bd2:#b8c8dc;
+  --tx:#1a2332;--mu:#6b7d99;
+  --bl:#1e5fa8;--blb:#dce8f8;--bld:#154090;
+  --gr:#1a6645;--grb:#d5f5e3;
+  --re:#be3a2c;--reb:#fdecea;
+  --am:#b45309;--amb:#fef3c7;
+  --or:#c05621;--orb:#feebc8;
+  --pu:#553c9a;--pub:#e9d8fd;
+  --sh:0 1px 4px rgba(0,0,0,.08);
+}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+.sc{display:none;min-height:100vh;padding-bottom:120px;}
+.sc.on{display:block;}
+.tb{background:var(--bl);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:80;display:flex;align-items:center;gap:8px;}
+.tb-back{background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tb-ttl{font-size:16px;font-weight:600;flex:1;}
+.tb-sub{font-size:11px;opacity:.7;margin-top:1px;}
+.tb-btn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:7px 10px;border-radius:8px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;white-space:nowrap;}
+.tabnav{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;}
+.tnav{flex:1;padding:11px 4px;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;color:var(--mu);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;text-align:center;}
+.tnav.on{color:var(--bl);border-bottom-color:var(--bl);font-weight:600;}
+.datebar{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.datetap{display:flex;align-items:center;gap:7px;cursor:pointer;position:relative;}
+.datelbl{font-size:15px;font-weight:600;}
+.dateinp{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;margin:0;}
+.pills{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.pill-b{background:var(--blb);color:var(--bl);}
+.pill-g{background:var(--grb);color:var(--gr);}
+.pill-p{background:var(--pub);color:var(--pu);}
+.empty{text-align:center;padding:56px 20px;}
+.empty-ico{font-size:36px;margin-bottom:10px;}
+.empty-ttl{font-size:15px;font-weight:600;color:var(--mu);margin-bottom:4px;}
+.empty-sub{font-size:13px;color:var(--mu);opacity:.65;}
+.ecard{background:var(--sf);margin:8px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;cursor:pointer;box-shadow:var(--sh);}
+.ecard:active{border-color:var(--bl);}
+.ecard-h{padding:11px 14px 9px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd);}
+.enum{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.emeta{flex:1;min-width:0;}
+.etitle{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.esub{font-size:12px;color:var(--mu);margin-top:1px;}
+.ecard-b{padding:8px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.b-di{background:var(--blb);color:var(--bl);}
+.b-ve{background:var(--orb);color:var(--or);}
+.b-th{background:var(--pub);color:var(--pu);}
+.b-tg{background:var(--amb);color:var(--am);}
+.b-hy{background:var(--reb);color:var(--re);}
+.b-nhap{background:var(--grb);color:var(--gr);}
+.b-xuat{background:var(--reb);color:var(--re);}
+.b-tang{background:var(--amb);color:var(--am);}
+.b-ban{background:var(--pub);color:var(--pu);}
+.b-huy{background:#fed7d7;color:#822727;}
+.fab{position:fixed;bottom:82px;right:16px;z-index:90;width:56px;height:56px;border-radius:50%;background:var(--bl);color:#fff;border:none;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(30,95,168,.4);}
+.fab:active{background:var(--bld);}
+.bbar{position:fixed;bottom:0;left:0;right:0;z-index:90;background:var(--sf);border-top:1px solid var(--bd);padding:9px 10px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bbtn{display:flex;align-items:center;justify-content:center;gap:6px;padding:13px;border-radius:11px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);}
+.bbtn.pri{background:var(--bl);color:#fff;border-color:var(--bl);}
+.bbtn:active{opacity:.82;}
+.bbtn-gs{display:flex;align-items:center;justify-content:center;gap:5px;padding:13px;border-radius:11px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;background:#0f9d58;color:#fff;}
+.bbtn-gs:active{opacity:.82;}
+/* Chuong thong bao + man so khop */
+.bellb{position:absolute;top:1px;right:1px;background:#e53935;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.bell-panel{position:fixed;top:56px;left:8px;right:8px;max-width:430px;margin-left:auto;background:var(--sf);border:1px solid var(--bd);border-radius:13px;box-shadow:0 8px 26px rgba(0,0,0,.18);z-index:130;display:none;overflow:hidden;}
+.bell-panel.on{display:block;}
+.bell-it{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:12.5px;line-height:1.45;font-weight:500;}
+.bell-it:last-child{border-bottom:none;}
+.bell-it:active{background:var(--bg);}
+.bell-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ds-bd{display:flex;justify-content:space-between;gap:8px;padding:5px 0;align-items:center;border-bottom:1px dashed var(--bd);}
+.ds-bd:last-child{border-bottom:none;}
+.gs-dot{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block;}
+.gs-dot.syncing{animation:pulse .7s infinite alternate;}
+@keyframes pulse{to{opacity:.3;}}
+.sec{background:var(--sf);margin:10px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;box-shadow:var(--sh);}
+.sec-hd{padding:11px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;background:#f4f7fc;}
+.sec-ico{width:26px;height:26px;border-radius:7px;background:var(--blb);color:var(--bl);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sec-ico.gr{background:var(--grb);color:var(--gr);}
+.sec-ico.pu{background:var(--pub);color:var(--pu);}
+.sec-ttl{font-size:13px;font-weight:600;}
+.frow{display:flex;align-items:center;min-height:54px;padding:0 14px;border-bottom:1px solid var(--bd);}
+.frow:last-child{border-bottom:none;}
+.flbl{font-size:12px;color:var(--mu);font-weight:500;width:88px;flex-shrink:0;}
+.finp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;outline:none;background:transparent;padding:8px 0;min-width:0;}
+.finp::placeholder{color:#c5bfb5;}
+.finp:focus{color:var(--bl);}
+select.finp{-webkit-appearance:none;appearance:none;}
+.sdw{position:relative;flex:1;}
+.sdi{width:100%;font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;outline:none;background:transparent;padding:8px 0;}
+.sdi::placeholder{color:#c5bfb5;}
+.sdi:focus{color:var(--bl);}
+.sdl{position:fixed;left:10px;right:10px;background:var(--sf);border:1px solid var(--bd2);border-radius:12px;max-height:220px;overflow-y:auto;z-index:500;box-shadow:0 8px 28px rgba(0,0,0,.15);display:none;}
+.sdl.on{display:block;}
+.sdo{padding:14px 16px;font-size:15px;color:var(--tx);cursor:pointer;border-bottom:.5px solid var(--bd);}
+.sdo:last-child{border-bottom:none;}
+.sdo:active{background:var(--blb);color:var(--bl);}
+.sd-empty{padding:13px 16px;font-size:13px;color:var(--mu);text-align:center;}
+.sd-new{padding:11px 16px;font-size:13px;color:var(--bl);font-weight:500;cursor:pointer;border-top:1px solid var(--bd);}
+.pitem{padding:11px 14px;border-bottom:1px solid var(--bd);}
+.pitem:last-child{border-bottom:none;}
+.pr1{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.pidx{width:20px;height:20px;border-radius:50%;background:var(--blb);color:var(--bl);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pname-inp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;color:var(--tx);border:none;border-bottom:1.5px solid var(--bd);outline:none;background:transparent;padding:4px 0;}
+.pname-inp:focus{border-color:var(--bl);}
+.pname-inp::placeholder{color:#c5bfb5;}
+.bdel{width:28px;height:28px;border-radius:50%;border:none;background:var(--reb);color:var(--re);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stpick{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
+.psel{font-size:12px;font-weight:500;padding:7px 12px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;white-space:nowrap;}
+.psel.a-di{background:var(--blb);color:var(--bl);border-color:var(--bl);}
+.psel.a-ve{background:var(--orb);color:var(--or);border-color:var(--or);}
+.psel.a-th{background:var(--pub);color:var(--pu);border-color:var(--pu);}
+.psel.a-tg{background:var(--amb);color:var(--am);border-color:var(--am);}
+.psel.a-hy{background:var(--reb);color:var(--re);border-color:var(--re);}
+.psel.a-nhap{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.psel.a-xuat{background:var(--reb);color:var(--re);border-color:var(--re);}
+.psel.a-tang{background:var(--amb);color:var(--am);border-color:var(--am);}
+.psel.a-ban{background:var(--pub);color:var(--pu);border-color:var(--pu);}
+.psel.a-huy{background:#fed7d7;color:#822727;border-color:#fc8181;}
+.qty-row{padding-left:28px;margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.qty-lbl{font-size:10px;color:var(--mu);font-weight:500;text-transform:uppercase;letter-spacing:.4px;width:70px;flex-shrink:0;}
+.qty-inp{font-family:'Be Vietnam Pro',sans-serif;font-size:16px;color:var(--tx);border:none;border-bottom:1.5px solid var(--bd);outline:none;background:transparent;padding:4px 0;width:90px;}
+.qty-inp:focus{border-color:var(--bl);}
+.qty-inp::placeholder{color:#c5bfb5;}
+.mc-pick{display:flex;gap:5px;}
+.mc{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;}
+.mc.on-moi{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.mc.on-cu{background:var(--orb);color:var(--or);border-color:var(--or);}
+.btnadd{margin:10px 14px;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:calc(100% - 28px);}
+.btnadd:active{background:var(--blb);}
+.tot-strip{margin:10px 10px 0;border-radius:13px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.tot-strip.gr{background:var(--gr);}
+.tot-strip.pu{background:var(--pu);}
+.tot-lbl{font-size:13px;color:rgba(255,255,255,.78);font-weight:500;}
+.tot-val{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;}
+.psub{font-size:12px;font-weight:600;color:var(--gr);padding-left:28px;margin-top:5px;min-height:14px;}
+.pay-pick{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0;}
+.pp{font-size:12px;font-weight:500;padding:7px 13px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;white-space:nowrap;}
+.pp.on-paid{background:var(--grb);color:var(--gr);border-color:var(--gr);}
+.pp.on-unpaid{background:var(--reb);color:var(--re);border-color:var(--re);}
+.pp.on-partial{background:var(--amb);color:var(--am);border-color:var(--am);}
+.khosel-row{display:flex;gap:8px;flex-wrap:wrap;}
+.khosel{font-size:13px;font-weight:500;padding:8px 16px;border-radius:20px;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--mu);font-family:'Be Vietnam Pro',sans-serif;}
+.khosel.on{background:var(--grb);color:var(--gr);border-color:var(--gr);font-weight:600;}
+.factions{margin:12px 10px 0;display:flex;flex-direction:column;gap:8px;}
+.btnsave{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:11px;border:none;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+.btnsave:active{background:var(--bld);}
+.btnsave.grn{background:var(--gr);}
+.btnsave.pun{background:var(--pu);}
+.btndel{display:flex;align-items:center;justify-content:center;padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.mini{display:flex;flex-direction:column;gap:4px;}
+.mlbl{font-size:10px;color:var(--mu);font-weight:500;text-transform:uppercase;letter-spacing:.4px;}
+.rpt-card{background:var(--sf);margin:10px 10px 0;border-radius:13px;border:1px solid var(--bd);overflow:hidden;box-shadow:var(--sh);}
+.rpt-hd{padding:11px 14px;background:#f4f7fc;border-bottom:1px solid var(--bd);font-size:13px;font-weight:600;}
+.rpt-sub-hd{padding:7px 14px 5px;font-size:12px;font-weight:600;border-bottom:.5px solid var(--bd);}
+.rpt-sub-hd.blue{background:var(--blb);color:var(--bl);}
+.rpt-sub-hd.green{background:var(--grb);color:var(--gr);}
+.rpt-nv-hd{padding:7px 14px 5px;font-size:12px;font-weight:600;color:var(--bl);background:#f0f5fc;border-bottom:.5px solid var(--bd);}
+.rpt-col-hd{display:flex;padding:5px 14px;border-bottom:.5px solid var(--bd);background:#f8fafb;}
+.rpt-row{display:flex;align-items:center;padding:9px 14px;border-bottom:.5px solid var(--bd);}
+.rpt-row:last-child{border-bottom:none;}
+.rpt-name{flex:1;font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.rpt-v{font-size:13px;font-weight:600;min-width:46px;text-align:right;}
+.rpt-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;min-width:46px;text-align:right;}
+/* bang doi soat tach nhom cot KHO | HOA DON | LECH */
+.ds-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.ds-tab{border-collapse:collapse;width:100%;min-width:520px;}
+.ds-tab th,.ds-tab td{padding:6px 5px;font-size:12px;font-weight:600;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap;}
+.ds-tab th{font-size:9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;background:#f8fafb;}
+.ds-tab td.ds-nm,.ds-tab th.ds-nm{text-align:left;font-weight:500;font-size:12.5px;position:sticky;left:0;background:#fff;max-width:96px;min-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+.ds-tab th.ds-nm{background:#f8fafb;font-size:9px;font-weight:700;}
+.ds-tab .ds-g1{border-left:2px solid var(--bd);}
+.ds-tab .ds-grp{text-align:center;}
+.rpt-tot{display:flex;align-items:center;padding:10px 14px;background:#f0f4fa;border-top:1.5px solid var(--bd2);}
+.rpt-tot-lbl{flex:1;font-size:13px;font-weight:600;color:var(--mu);}
+.rpt-tot-v{font-size:13px;font-weight:700;min-width:46px;text-align:right;}
+.rpt-nv-sub{display:flex;align-items:center;padding:7px 14px;background:#f5f8fd;border-top:.5px solid var(--bd2);}
+.set-wrap{padding:10px 10px 0;}
+.itabs{display:flex;gap:0;margin:0 14px;border-radius:8px;overflow:hidden;border:1px solid var(--bd2);}
+.itab{flex:1;padding:8px;font-family:'Be Vietnam Pro',sans-serif;font-size:12px;font-weight:500;background:var(--bg);color:var(--mu);border:none;cursor:pointer;}
+.itab.on{background:var(--bl);color:#fff;}
+.ipanel{padding:10px 14px 14px;}
+.bulk-ta{width:100%;min-height:80px;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;color:var(--tx);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;outline:none;background:var(--sf);resize:vertical;line-height:1.6;}
+.bulk-ta:focus{border-color:var(--bl);}
+.bulk-ta::placeholder{color:#c5bfb5;}
+.ibtns{display:flex;gap:8px;margin-top:10px;}
+.btnimport{flex:1;padding:10px;border-radius:9px;border:none;background:var(--bl);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+.btnclr{padding:10px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+.cmng{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;}
+.cx{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--bd2);padding:5px 10px;border-radius:20px;font-size:13px;font-weight:500;}
+.cxd{color:var(--re);font-size:15px;cursor:pointer;}
+.arow{display:flex;gap:8px;padding:2px 14px 12px;}
+.ainp{flex:1;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;color:var(--tx);border:1.5px solid var(--bd);border-radius:9px;padding:9px 12px;outline:none;background:var(--sf);}
+.ainp:focus{border-color:var(--bl);}
+.abtn{background:var(--bl);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.cbadge{display:inline-block;background:var(--blb);color:var(--bl);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:6px;}
+.finp-file{display:none;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:flex-end;}
+.overlay.on{display:flex;}
+.modal{background:var(--sf);border-radius:18px 18px 0 0;padding:20px 16px calc(22px + env(safe-area-inset-bottom));width:100%;}
+.modal-ttl{font-size:16px;font-weight:600;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--mu);margin-bottom:18px;line-height:1.5;}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.modal-no{padding:13px;border-radius:11px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.modal-yes{padding:13px;border-radius:11px;border:none;background:var(--re);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(50px);opacity:0;background:#1a2332;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;transition:transform .2s,opacity .2s;white-space:nowrap;max-width:92vw;text-align:center;}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="sc on" id="s-home">
+  <div class="tb">
+    <div style="flex:1"><div class="tb-ttl">Quan Ly Kho</div></div>
+    <button class="tb-btn" id="bellBtn" onclick="toggleBell()" style="padding:7px 9px;position:relative;">&#128276;<span class="bellb" id="bellCnt">0</span></button>
+    <button class="tb-btn" onclick="goReport()">Bao cao</button>
+    <button class="tb-btn" onclick="goHistory()" style="padding:7px 9px;">&#128336;</button>
+    <button class="tb-btn" onclick="goSettings()" style="padding:7px 9px;">&#9881;</button>
+  </div>
+  <div class="tabnav">
+    <button class="tnav on" id="tn0" onclick="switchTab(0)">Hang giao</button>
+    <button class="tnav" id="tn1" onclick="switchTab(1)">Nhap/Xuat</button>
+    <button class="tnav" id="tn2" onclick="switchTab(2)">Don le</button>
+  </div>
+  <div class="datebar">
+    <div class="datetap" onclick="moLich('dInp')">
+      <span class="datelbl" id="dLbl"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="dInp" class="dateinp" onchange="onDateChange()">
+    </div>
+    <div class="pills" id="homePills"></div>
+  </div>
+  <div id="hdBanner"></div>
+  <div id="homeList"></div>
+  <button class="fab" onclick="openNew()">+</button>
+  <div class="bbar">
+    <button class="bbtn" onclick="copyZalo()">Zalo</button>
+    <button class="bbtn-gs" onclick="pushToSheet()" id="gsBtn"><span class="gs-dot" id="gsDot"></span>&#128209; Sheet</button>
+  </div>
+</div>
+
+<!-- HANG GIAO FORM -->
+<div class="sc" id="s-hang">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="hTtl">Phieu hang giao</div><div class="tb-sub" id="hSub"></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico">&#128666;</div><div class="sec-ttl">Thong tin hang giao</div></div>
+    <div class="frow">
+      <span class="flbl">Giao hang</span>
+      <div class="sdw"><input class="sdi" id="fGH" type="text" placeholder="Ten nguoi giao hang..." autocomplete="off"><div class="sdl" id="sdGH"></div></div>
+    </div>
+    <div id="hProdRows"></div>
+    <button class="btnadd" onclick="addHRow()">+ Them san pham</button>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="frow"><span class="flbl">Ghi chu</span><input class="finp" id="hNotes" type="text" placeholder="Ghi chu..."></div>
+  </div>
+  <div class="factions">
+    <button class="btnsave" onclick="saveHang()">Luu phieu hang giao</button>
+    <button class="btndel" id="hDelBtn" style="display:none" onclick="confirmDel('h')">Xoa phieu nay</button>
+  </div>
+</div>
+
+<!-- NHAP/XUAT KHO FORM -->
+<div class="sc" id="s-kho">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="kTtl">Phieu nhap/xuat</div><div class="tb-sub" id="kSub"></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico gr">&#128202;</div><div class="sec-ttl">Thong tin nhap / xuat kho</div></div>
+    <div class="frow">
+      <span class="flbl">Nhan vien</span>
+      <div class="sdw"><input class="sdi" id="fNV" type="text" placeholder="Ten nhan vien kho..." autocomplete="off"><div class="sdl" id="sdNV"></div></div>
+    </div>
+    <div class="frow" style="flex-direction:column;align-items:flex-start;padding:10px 14px;gap:8px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Kho</span>
+      <div class="khosel-row" id="khoPickRow"></div>
+    </div>
+    <div id="kProdRows"></div>
+    <button class="btnadd" onclick="addKRow()" style="color:var(--gr);">+ Them san pham</button>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="frow"><span class="flbl">Ghi chu</span><input class="finp" id="kNotes" type="text" placeholder="Ghi chu..."></div>
+  </div>
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico" style="background:#e8f0fe;color:#1a73e8;">&#128247;</div><div class="sec-ttl">Anh chung tu</div></div>
+    <div style="padding:10px 14px;">
+      <input type="file" id="kAnhInput" accept="image/*" multiple style="display:none" onchange="renderKhoAnhPreview()">
+      <button type="button" class="btnadd" style="color:#1a73e8;width:100%;border:1.5px dashed var(--bd2);border-radius:9px;padding:10px;background:none;" onclick="document.getElementById('kAnhInput').click()">+ Chup / chon anh</button>
+      <div id="kAnhPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+      <div style="font-size:11px;color:var(--mu);margin-top:6px;">Anh tai len Drive khi bam Luu phieu kho. Chon lai = thay toan bo anh.</div>
+    </div>
+  </div>
+  <div class="factions">
+    <button class="btnsave grn" onclick="saveKho()">Luu phieu kho</button>
+    <button class="btndel" id="kDelBtn" style="display:none" onclick="confirmDel('k')">Xoa phieu nay</button>
+  </div>
+</div>
+
+<!-- DON LE FORM -->
+<div class="sc" id="s-dl">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl" id="dlTtl">Don le moi</div><div class="tb-sub" id="dlSub"></div></div>
+  </div>
+
+  <!-- 1. Thong tin khach hang (moved to top) -->
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico pu">&#128100;</div><div class="sec-ttl">Thong tin khach hang</div></div>
+    <div class="frow"><span class="flbl">Ten khach</span><input class="finp" id="dlKhach" type="text" placeholder="Ten khach hang..."></div>
+    <div class="frow"><span class="flbl">SDT</span><input class="finp" id="dlSDT" type="tel" placeholder="So dien thoai..."></div>
+    <div class="frow"><span class="flbl">Dia chi</span><input class="finp" id="dlAddr" type="text" placeholder="Dia chi giao hang..."></div>
+  </div>
+
+  <!-- 2. San pham ban -->
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico pu">&#128722;</div><div class="sec-ttl">San pham ban</div></div>
+    <div class="frow">
+      <span class="flbl">Nhan vien ban</span>
+      <div class="sdw"><input class="sdi" id="dlNV" type="text" placeholder="Ten nhan vien..." autocomplete="off"><div class="sdl" id="sdDlNV"></div></div>
+    </div>
+    <div id="dlProdRows"></div>
+    <button class="btnadd" onclick="addDlRow()" style="color:var(--pu);border-color:var(--pu);">+ Them san pham</button>
+  </div>
+
+  <div class="tot-strip pu">
+    <span class="tot-lbl">Thanh tien</span>
+    <span class="tot-val" id="dlTotal">0 d</span>
+  </div>
+
+  <!-- 3. Thanh toan -->
+  <div class="sec" style="margin-top:10px">
+    <div class="sec-hd"><div class="sec-ico pu">&#128179;</div><div class="sec-ttl">Thanh toan</div></div>
+    <div class="frow" style="flex-direction:column;align-items:flex-start;padding:10px 14px;gap:6px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Tinh trang thanh toan</span>
+      <div class="pay-pick" id="dlPayPick"></div>
+    </div>
+    <div class="frow" style="align-items:flex-start;flex-direction:column;padding:10px 14px;gap:8px;min-height:auto;">
+      <span style="font-size:12px;color:var(--mu);font-weight:500;">Tien ship</span>
+      <div style="display:flex;align-items:center;gap:8px;width:100%;">
+        <input class="finp" id="dlShip" type="number" inputmode="decimal" placeholder="0" oninput="calcDlTotal()" style="flex:1;font-size:16px;">
+        <span style="font-size:11px;color:var(--mu);">d</span>
+      </div>
+      <div style="display:flex;gap:8px;width:100%;">
+        <button id="shipPillKhach" onclick="setShipOwner('khach')"
+          style="flex:1;padding:8px 6px;border-radius:10px;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--gr);background:var(--gr);color:#fff;">
+          Khach tra (+)</button>
+        <button id="shipPillMinh" onclick="setShipOwner('minh')"
+          style="flex:1;padding:8px 6px;border-radius:10px;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--bd2);background:var(--sf);color:var(--mu);">
+          Minh tra (-)</button>
+      </div>
+      <div id="shipNote" style="font-size:11px;color:var(--gr);font-weight:600;"></div>
+    </div>
+    <div class="frow">
+      <span class="flbl">Ghi chu / Uu dai</span>
+      <input class="finp" id="dlNotes" type="text" placeholder="Vi du: giam 10%...">
+    </div>
+  </div>
+
+  <div class="factions">
+    <button class="btnsave pun" onclick="saveDl()">Luu don le</button>
+    <button class="btndel" id="dlDelBtn" style="display:none" onclick="confirmDel('dl')">Xoa don nay</button>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="sc" id="s-rpt">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">Bao cao ngay</div><div class="tb-sub" id="rptLbl"></div></div>
+    <button class="tb-btn" onclick="goTon()">Ton kho</button>
+    <button class="tb-btn" onclick="xuatExcelBaoCao()">Excel</button>
+    <button class="tb-btn" onclick="copyZaloRpt()">Zalo</button>
+  </div>
+  <div class="datebar">
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="rptDoiNgay(-1)">&#8249;</button>
+    <div class="datetap" onclick="moLich('rptInp')">
+      <span class="datelbl" id="rptLbl2"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="rptInp" class="dateinp" onchange="rptChonNgay()">
+    </div>
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="rptDoiNgay(1)">&#8250;</button>
+  </div>
+  <div id="rptContent" style="padding-bottom:20px;"></div>
+</div>
+
+<!-- SETTINGS -->
+
+<!-- LICH SU DONG BO -->
+<div class="sc" id="s-hist">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1">
+      <div class="tb-ttl">Lich su dong bo</div>
+      <div class="tb-sub" id="histSub"></div>
+    </div>
+    <button class="tb-btn" onclick="clearHistory()" style="color:var(--re);font-size:12px;">Xoa LS</button>
+  </div>
+  <div id="histContent" style="padding-bottom:30px;"></div>
+</div>
+
+<div class="sc" id="s-set">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div class="tb-ttl">Cai dat</div>
+  </div>
+  <div class="set-wrap">
+    <div class="sec">
+      <div class="sec-hd"><div class="sec-ico">&#128666;</div><div class="sec-ttl">Nguoi giao hang <span class="cbadge" id="ghCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="ghT1" onclick="swTab('gh',1)">Nhap 1 ten</button><button class="itab" id="ghT2" onclick="swTab('gh',2)">Dan danh sach</button></div>
+      <div class="ipanel" id="ghP1"><div class="arow" style="padding:0"><input class="ainp" id="ghAddI" type="text" placeholder="Ten nguoi giao..."><button class="abtn" onclick="addOne('gh')">Them</button></div></div>
+      <div class="ipanel" id="ghP2" style="display:none"><textarea class="bulk-ta" id="ghBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('gh')">Them tat ca</button><button class="btnclr" onclick="clearAll('gh')">Xoa het</button></div></div>
+      <div class="cmng" id="ghMng"></div>
+    </div>
+    <div class="sec" style="margin-top:10px">
+      <div class="sec-hd"><div class="sec-ico">&#128119;</div><div class="sec-ttl">Nhan vien kho <span class="cbadge" id="nvCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="nvT1" onclick="swTab('nv',1)">Nhap 1 ten</button><button class="itab" id="nvT2" onclick="swTab('nv',2)">Dan danh sach</button></div>
+      <div class="ipanel" id="nvP1"><div class="arow" style="padding:0"><input class="ainp" id="nvAddI" type="text" placeholder="Ten nhan vien..."><button class="abtn" onclick="addOne('nv')">Them</button></div></div>
+      <div class="ipanel" id="nvP2" style="display:none"><textarea class="bulk-ta" id="nvBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('nv')">Them tat ca</button><button class="btnclr" onclick="clearAll('nv')">Xoa het</button></div></div>
+      <div class="cmng" id="nvMng"></div>
+    </div>
+    <div class="sec" style="margin-top:10px">
+      <div class="sec-hd"><div class="sec-ico">&#128230;</div><div class="sec-ttl">San pham <span class="cbadge" id="prCnt">0</span></div></div>
+      <div class="itabs"><button class="itab on" id="prT1" onclick="swTab('pr',1)">Nhap 1 ten</button><button class="itab" id="prT2" onclick="swTab('pr',2)">Dan danh sach</button><button class="itab" id="prT3" onclick="swTab('pr',3)">Import file</button></div>
+      <div class="ipanel" id="prP1"><div class="arow" style="padding:0"><input class="ainp" id="prAddI" type="text" placeholder="Ten san pham..."><button class="abtn" onclick="addOne('pr')">Them</button></div></div>
+      <div class="ipanel" id="prP2" style="display:none"><textarea class="bulk-ta" id="prBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('pr')">Them tat ca</button><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
+      <div class="ipanel" id="prP3" style="display:none"><button onclick="document.getElementById('prFile').click()" style="width:100%;padding:10px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Chon file Excel/CSV</button><input type="file" id="prFile" class="finp-file" accept=".xlsx,.xls,.csv" onchange="importFile(this)"><div style="font-size:11px;color:var(--mu);margin-top:5px;">Cot dau = ten san pham</div><div class="ibtns" style="margin-top:8px;"><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
+      <div class="cmng" id="prMng"></div>
+    </div>
+    <!-- Google Sheet -->
+    <div class="sec" style="margin-top:10px;margin-bottom:10px;">
+      <div class="sec-hd"><div class="sec-ico" style="background:#e6f4ea;color:#0f9d58;">&#128209;</div><div class="sec-ttl">Ket noi Google Sheet</div></div>
+      <div style="padding:12px 14px;">
+        <div id="gsStatusBar" style="font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;"></div>
+        <input type="text" id="gsUrlSet" placeholder="https://script.google.com/macros/s/..."
+          style="width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid var(--bd2);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;background:var(--bg);color:var(--tx);margin-bottom:10px;outline:none;box-sizing:border-box;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="saveGsUrlSet()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#0f9d58;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Luu URL</button>
+          <button onclick="window.open(document.getElementById('gsUrlSet').value||getGsUrl(),'_blank')" style="padding:12px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Kiem tra</button>
+          <button onclick="svGsUrl('');renderGsStatus();toast('Da xoa URL');" style="padding:12px 14px;border-radius:9px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--re);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Xoa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="cfOv">
+  <div class="modal">
+    <div class="modal-ttl" id="cfTtl">Xoa?</div>
+    <div class="modal-sub" id="cfBody"></div>
+    <div class="modal-btns">
+      <button class="modal-no" onclick="closeCf()">Huy</button>
+      <button class="modal-yes" id="cfOk">Xoa</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- DON TU APP HOA DON -->
+<div class="sc" id="s-hdon">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">Don tu app hoa don</div><div class="tb-sub" id="hdSub"></div></div>
+    <button class="tb-btn" onclick="hdTai(true)">Tai lai</button>
+  </div>
+  <div id="hdNguoiBox"></div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ico">&#128229;</div><div class="sec-ttl">Bam Nhan la don vao so kho</div></div>
+    <div id="hdList"></div>
+  </div>
+  <div style="padding:10px 14px 24px;font-size:12px;color:var(--mu);line-height:1.6;">
+    Don ban le vao tab <b>Don le</b>, phieu chao hang vao tab <b>Nhap/Xuat</b> trang thai <b>Xuat</b>.
+    Hang ve kho khong mang theo tien &mdash; doanh thu chi dem o so hoa don.
+  </div>
+</div>
+
+<!-- TON KHO -->
+<div class="sc" id="s-ton">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">Ton kho</div><div class="tb-sub" id="tonSub"></div></div>
+    <button class="tb-btn" onclick="KD_CACHE=null;goTon()">Tai lai</button>
+  </div>
+  <div class="datebar">
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="tonDoiNgay(-1)">&#8249;</button>
+    <div class="datetap" onclick="moLich('tonInp')">
+      <span class="datelbl" id="tonLbl"></span>
+      <span style="color:var(--mu);font-size:11px;">&#9660;</span>
+      <input type="date" id="tonInp" class="dateinp" onchange="tonChonNgay()">
+    </div>
+    <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="tonDoiNgay(1)">&#8250;</button>
+  </div>
+  <div style="padding:10px 10px 0;">
+    <input class="ainp" id="tonTim" type="text" placeholder="Tim san pham..." oninput="veTon()" style="width:100%;">
+  </div>
+  <div id="tonList" style="padding:8px 10px 10px;"></div>
+  <div style="padding:0 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
+    Ton = <b>Nhap &minus; Xuat kho &minus; Ban le</b>, cong don toan bo lich su Sheet kho
+    + phieu tren may chua day (giong cong thuc bao cao). Hang giao mang di / mang ve khong tru vao ton.
+    Neu so ton khong khop thuc te, kha nang Sheet thieu du lieu giai doan cu - noi em them chuc nang chot kiem ke.
+  </div>
+</div>
+
+<!-- SO KHOP KHO - HOA DON -->
+<div class="sc" id="s-dsoat">
+  <div class="tb">
+    <button class="tb-back" onclick="goHome()">&#8592;</button>
+    <div style="flex:1"><div class="tb-ttl">So khop kho - hoa don</div><div class="tb-sub" id="dsSub"></div></div>
+    <button class="tb-btn" onclick="dsTaiLai()">Tai lai</button>
+  </div>
+  <div class="datebar" style="flex-direction:column;align-items:stretch;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="dsDoiThang(-1)">&#8249;</button>
+      <div class="datelbl" id="dsThangLbl"></div>
+      <button class="tb-btn" style="background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);padding:7px 14px;" onclick="dsDoiThang(1)">&#8250;</button>
+    </div>
+    <div id="dsStrip" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
+    <div class="pills" id="dsPills"></div>
+  </div>
+  <div id="dsList"></div>
+  <div style="padding:10px 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
+    So sanh <b>Mang di &minus; Mang ve</b> (so kho) voi <b>Giao + Doi + Tang &minus; Thu hoi</b> (hoa don NV giao).
+    NV chua nhap hoa don thi hien <b>cho HD</b>, chua tinh la lech. Nguon: he van don, lam moi moi 5 phut.
+  </div>
+</div>
+
+<div class="bell-panel" id="bellPanel"></div>
+
 <!-- GG SHEET MODAL -->
 <div class="overlay" id="gsOverlay" onclick="if(event.target===this)closeGS()">
   <div class="modal">
@@ -523,10 +1169,38 @@ function fmtD(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]
 function fmtDFull(s){if(!s)return'';var d=new Date(s+'T00:00:00');var days=['CN','T2','T3','T4','T5','T6','T7'];return days[d.getDay()]+', '+fmtD(s);}
 function isIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;}
 
+/* Mo bang lich chon ngay: Chrome/Edge dung showPicker, may cu roi ve focus+click */
+function moLich(id){
+  var el=document.getElementById(id); if(!el) return;
+  try{ el.showPicker(); }
+  catch(e){ try{ el.focus(); el.click(); }catch(e2){} }
+}
 function go(id){document.querySelectorAll('.sc').forEach(function(s){s.classList.remove('on');});document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
 function goHome(){renderHome();go('s-home');}
 function goSettings(){renderSettings();go('s-set');}
-function goReport(){renderReport();go('s-rpt');}
+var rptNgay=todayStr();
+function rptNap(){
+  var l2=document.getElementById('rptLbl2'); if(l2)l2.textContent=fmtDFull(rptNgay);
+  var inp=document.getElementById('rptInp'); if(inp)inp.value=rptNgay;
+  renderReport();
+  kdTaiNgay(rptNgay, function(){
+    if(document.getElementById('s-rpt').classList.contains('on')) renderReport();
+  });
+  dsTai(rptNgay, false, function(){
+    if(document.getElementById('s-rpt').classList.contains('on')) renderReport();
+  });
+  kdTai(function(){});   // ham nong lich su cho Excel + ton
+}
+function goReport(){ rptNgay=curDate; rptNap(); go('s-rpt'); }
+function rptDoiNgay(d){
+  var n=lechNgay(rptNgay,d);
+  if(n>todayStr()) return;
+  rptNgay=n; rptNap();
+}
+function rptChonNgay(){
+  var i=document.getElementById('rptInp');
+  if(i&&i.value&&i.value<=todayStr()){ rptNgay=i.value; rptNap(); }
+}
 
 function switchTab(t){
   curTab=t;
@@ -895,7 +1569,18 @@ function confirmDel(type){
 function closeCf(){document.getElementById('cfOv').classList.remove('on');}
 
 // REPORT
+/* Bao cao = dong tren Sheet (kho_data) + phieu tren may CHUA day.
+   Phieu da day nam tren Sheet roi nen khong bao gio dem trung. */
 function getRptData(dt){
+  var sh=kdPhieuCache(dt);
+  if(!sh){ var r0=getRptDataLocal(dt); r0.nguon='may'; return r0; }
+  var lh=getHangs(dt).filter(chuaLenSheet),
+      lk=getKhos(dt).filter(chuaLenSheet),
+      lb=getDls(dt).filter(chuaLenSheet);
+  return { hangs:sh.hangs.concat(lh), khos:sh.khos.concat(lk), dls:sh.dls.concat(lb),
+           nguon:'sheet', soSheet:sh.so, soMay:lh.length+lk.length+lb.length };
+}
+function getRptDataLocal(dt){
   // Lay du lieu bao cao: uu tien data dang co trong app
   // Neu da sync (app trong) thi lay tu lich su
   var hangs=getHangs(dt);
@@ -929,44 +1614,145 @@ function getRptData(dt){
 }
 
 function renderReport(){
-  document.getElementById('rptLbl').textContent=fmtDFull(curDate);
+  document.getElementById('rptLbl').textContent=fmtDFull(rptNgay);
   var el=document.getElementById('rptContent');el.innerHTML='';
-  var rpt=getRptData(curDate);
+  var rpt=getRptData(rptNgay);
   var hangs=rpt.hangs;
   var khos=rpt.khos;
   var dls=rpt.dls;
 
-  // ── Build unified product stock map ──
+  // nhan nguon du lieu
+  var ngDiv=document.createElement('div');
+  ngDiv.style.cssText='margin:8px 10px 0;padding:8px 12px;border-radius:9px;font-size:11.5px;line-height:1.5;font-weight:500;background:'+(rpt.nguon==='sheet'?'var(--grb)':'var(--amb)')+';color:'+(rpt.nguon==='sheet'?'var(--gr)':'var(--am)')+';';
+  ngDiv.textContent = rpt.nguon==='sheet'
+    ? ('Nguon: Sheet kho ('+(rpt.soSheet||0)+' dong)'+(rpt.soMay?(' + '+rpt.soMay+' phieu tren may chua day'):''))
+    : 'Nguon: du lieu tren may - dang tai Sheet kho...';
+  el.appendChild(ngDiv);
+
+  // -- Build unified product stock map --
   // stockMap[prod] = { nhap, xuat_kho, ban_le, ton }
   var stockMap={};
   function ensureStock(p){if(!stockMap[p])stockMap[p]={nhap:0,xuat_kho:0,ban_le:0};}
   khos.forEach(function(k){k.products.forEach(function(p){if(!p.name)return;ensureStock(p.name);var q=p.qty||0;if(p.st==='Nhap')stockMap[p.name].nhap+=q;else stockMap[p.name].xuat_kho+=q;});});
   dls.forEach(function(d){d.products.forEach(function(p){if(!p.name)return;ensureStock(p.name);stockMap[p.name].ban_le+=(p.qty||0);});});
 
-  // ── Section 1: Hang giao ──
-  var c1=document.createElement('div');c1.className='rpt-card';
-  var h1=document.createElement('div');h1.className='rpt-hd';h1.textContent='Hang giao - Mang di / Mang ve / Thu hoi';c1.appendChild(h1);
-  if(!hangs.length){var e1=document.createElement('div');e1.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e1.textContent='Chua co phieu hang giao';c1.appendChild(e1);}
-  else{
-    var ghMap={};
-    hangs.forEach(function(h){var g=h.gh||'?';if(!ghMap[g])ghMap[g]={};h.products.forEach(function(p){if(!p.name)return;if(!ghMap[g][p.name])ghMap[g][p.name]={'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};ghMap[g][p.name][p.st]=(ghMap[g][p.name][p.st]||0)+(p.qty||0);});});
-    Object.keys(ghMap).forEach(function(g){
-      var gHd=document.createElement('div');gHd.className='rpt-sub-hd blue';gHd.textContent=g;c1.appendChild(gHd);
-      var cHd=document.createElement('div');cHd.className='rpt-col-hd';
-      cHd.innerHTML='<span style="flex:1;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;">San pham</span><span class="rpt-lbl" style="color:var(--bl);">Di</span><span class="rpt-lbl" style="color:var(--or);">Ve</span><span class="rpt-lbl" style="color:var(--pu);">TH</span><span class="rpt-lbl" style="color:var(--am);">Tang</span><span class="rpt-lbl" style="color:var(--re);">Huy</span>';
-      c1.appendChild(cHd);
-      Object.keys(ghMap[g]).forEach(function(prod){
-        var v=ghMap[g][prod];var row=document.createElement('div');row.className='rpt-row';
-        var nm=document.createElement('span');nm.className='rpt-name';nm.textContent=prod;
-        function mkV(val,color){var sp=document.createElement('span');sp.className='rpt-v';sp.style.color=color;sp.textContent=fmt(val||0);return sp;}
-        row.appendChild(nm);row.appendChild(mkV(v['Mang di'],'var(--bl)'));row.appendChild(mkV(v['Mang ve'],'var(--or)'));row.appendChild(mkV(v['Thu hoi'],'var(--pu)'));row.appendChild(mkV(v['Tang'],'var(--am)'));row.appendChild(mkV(v['Huy'],'var(--re)'));
-        c1.appendChild(row);
-      });
+  // -- Section 1: Hang giao + doi soat hoa don truc tiep --
+  // Cot HD = so da giao theo hoa don NV (Ban + Doi + Tang - Thu hoi, tab HoaDon
+  // sheet van-don-sale, qua doi_soat_kho). Quy ve CAI cho cung don vi voi so kho.
+  // LECH = (Di - Ve) - HD. NV chua nhap hoa don -> cot HD hien "--".
+  var dsRpt=dsLay(rptNgay);
+  var dsPt=(dsRpt&&dsRpt.ok)?dsPhanTich(dsRpt):null;
+  var hdMap={};   // nvNorm -> spNorm -> {nv, sp, hdCai, lechCai}
+  if(dsRpt&&dsRpt.ok){
+    (dsRpt.tonKho||[]).forEach(function(r){
+      var nk=hdNorm(r.nguoiGiao), sk=hdNorm(r.sanPham), cpt=r.caiPerTui||1;
+      if(!hdMap[nk])hdMap[nk]={};
+      hdMap[nk][sk]={ nv:r.nguoiGiao, sp:r.sanPham,
+        hdCai:Math.round((r.giaoHD||0)*cpt),
+        giao:Math.round((r.hdGiao||0)*cpt),
+        doi:Math.round((r.hdDoi||0)*cpt),
+        tang:Math.round((r.hdTang||0)*cpt),
+        thu:Math.round((r.hdThu||0)*cpt),
+        lechCai:Math.round((r.delta||0)*cpt) };
     });
+  }
+  function nvCoHD(nv){ return !!(dsPt&&dsPt.coHD&&dsPt.coHD[nv]); }
+
+  var c1=document.createElement('div');c1.className='rpt-card';
+  var h1=document.createElement('div');h1.className='rpt-hd';h1.textContent='Hang giao - doi soat hoa don';c1.appendChild(h1);
+
+  // Gop NV: co phieu kho HOAC co hoa don (bat NV quen nhap kho / quen dong bo HD)
+  var ghMap={};
+  hangs.forEach(function(h){var g=h.gh||'?';if(!ghMap[g])ghMap[g]={};h.products.forEach(function(p){if(!p.name)return;if(!ghMap[g][p.name])ghMap[g][p.name]={'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};ghMap[g][p.name][p.st]=(ghMap[g][p.name][p.st]||0)+(p.qty||0);});});
+  for(var nk1 in hdMap){
+    if(!hdMap.hasOwnProperty(nk1))continue;
+    var daCoNV=Object.keys(ghMap).some(function(g){return hdNorm(g)===nk1;});
+    if(!daCoNV){
+      var vd=hdMap[nk1][Object.keys(hdMap[nk1])[0]];
+      if(vd) ghMap[vd.nv]=ghMap[vd.nv]||{};
+    }
+  }
+  if(!Object.keys(ghMap).length){
+    var e1=document.createElement('div');e1.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e1.textContent='Chua co phieu hang giao / hoa don nao';c1.appendChild(e1);
+  }
+  else{
+    Object.keys(ghMap).sort().forEach(function(g){
+      var nk=hdNorm(g), coHD=nvCoHD(g);
+      var gHd=document.createElement('div');gHd.className='rpt-sub-hd blue';
+      gHd.textContent=g+(coHD?'':' - chua co hoa don');c1.appendChild(gHd);
+
+      // bang tach 2 nhom cot: KHO (Di Ve TH Tang Huy) | HOA DON (Giao Doi Tang Thu) | Lech
+      var wrap=document.createElement('div');wrap.className='ds-wrap';
+      var tb=document.createElement('table');tb.className='ds-tab';
+      var thead=document.createElement('thead');
+      thead.innerHTML=
+        '<tr>'+
+          '<th class="ds-nm" rowspan="2">San pham</th>'+
+          '<th class="ds-grp ds-g1" colspan="5">Kho</th>'+
+          '<th class="ds-grp ds-g1" colspan="4">Hoa don</th>'+
+          '<th class="ds-g1" rowspan="2" style="color:var(--re);">Lech</th>'+
+        '</tr>'+
+        '<tr>'+
+          '<th class="ds-g1" style="color:var(--bl);">Di</th>'+
+          '<th style="color:var(--or);">Ve</th>'+
+          '<th style="color:var(--pu);">TH</th>'+
+          '<th style="color:var(--am);">Tang</th>'+
+          '<th style="color:var(--re);">Huy</th>'+
+          '<th class="ds-g1" style="color:var(--gr);">Giao</th>'+
+          '<th style="color:var(--gr);">Doi</th>'+
+          '<th style="color:var(--gr);">Tang</th>'+
+          '<th style="color:var(--gr);">Thu</th>'+
+        '</tr>';
+      tb.appendChild(thead);
+      var tbody=document.createElement('tbody');
+
+      // dong SP: tu so kho + bo sung SP chi co tren hoa don
+      var dsSP={};
+      Object.keys(ghMap[g]).forEach(function(prod){ dsSP[hdNorm(prod)]=prod; });
+      if(hdMap[nk]) Object.keys(hdMap[nk]).forEach(function(sk){ if(!dsSP[sk]) dsSP[sk]=hdMap[nk][sk].sp; });
+
+      Object.keys(dsSP).sort(function(a,b){return dsSP[a]<dsSP[b]?-1:1;}).forEach(function(sk){
+        var prod=dsSP[sk];
+        var v=ghMap[g][prod]||{'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};
+        var hd3=(hdMap[nk]&&hdMap[nk][sk])||null;
+        var tr=document.createElement('tr');
+        function mkTd(val,color,dam,cls){var td=document.createElement('td');if(cls)td.className=cls;if(color)td.style.color=color;if(dam)td.style.fontWeight='800';td.textContent=val;return td;}
+        var tdN=document.createElement('td');tdN.className='ds-nm';tdN.textContent=prod;tr.appendChild(tdN);
+        tr.appendChild(mkTd(fmt(v['Mang di']||0),'var(--bl)',false,'ds-g1'));
+        tr.appendChild(mkTd(fmt(v['Mang ve']||0),'var(--or)'));
+        tr.appendChild(mkTd(fmt(v['Thu hoi']||0),'var(--pu)'));
+        tr.appendChild(mkTd(fmt(v['Tang']||0),'var(--am)'));
+        tr.appendChild(mkTd(fmt(v['Huy']||0),'var(--re)'));
+        if(!coHD){
+          tr.appendChild(mkTd('--','var(--mu)',false,'ds-g1'));
+          tr.appendChild(mkTd('--','var(--mu)'));
+          tr.appendChild(mkTd('--','var(--mu)'));
+          tr.appendChild(mkTd('--','var(--mu)'));
+          tr.appendChild(mkTd('--','var(--mu)',false,'ds-g1'));
+        } else {
+          tr.appendChild(mkTd(hd3?fmt(hd3.giao||0):'0','var(--gr)',true,'ds-g1'));
+          tr.appendChild(mkTd(hd3?fmt(hd3.doi||0):'0','var(--gr)'));
+          tr.appendChild(mkTd(hd3?fmt(hd3.tang||0):'0','var(--gr)'));
+          tr.appendChild(mkTd(hd3?fmt(hd3.thu||0):'0','var(--gr)'));
+          var lech=hd3?hd3.lechCai:((v['Mang di']||0)-(v['Mang ve']||0));
+          tr.appendChild(mkTd((lech>0?'+':'')+fmt(lech), lech===0?'var(--gr)':'var(--re)', true,'ds-g1'));
+        }
+        tbody.appendChild(tr);
+      });
+      tb.appendChild(tbody);
+      wrap.appendChild(tb);
+      c1.appendChild(wrap);
+    });
+    if(!dsRpt){
+      var ch1=document.createElement('div');
+      ch1.style.cssText='padding:8px 14px;font-size:11px;color:var(--mu);';
+      ch1.textContent='Dang tai hoa don tu he van don de doi soat...';
+      c1.appendChild(ch1);
+    }
   }
   el.appendChild(c1);
 
-  // ── Section 2: Kho nhap/xuat theo NV ──
+  // -- Section 2: Kho nhap/xuat theo NV --
   var c2=document.createElement('div');c2.className='rpt-card';
   var h2=document.createElement('div');h2.className='rpt-hd';h2.textContent='Nhap / Xuat kho (theo nhan vien)';c2.appendChild(h2);
   if(!khos.length){var e2=document.createElement('div');e2.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e2.textContent='Chua co phieu nhap/xuat';c2.appendChild(e2);}
@@ -1009,7 +1795,7 @@ function renderReport(){
   }
   el.appendChild(c2);
 
-  // ── Section 3: Don le ──
+  // -- Section 3: Don le --
   var c3=document.createElement('div');c3.className='rpt-card';
   var h3=document.createElement('div');h3.className='rpt-hd';h3.textContent='Don le - Doanh thu';c3.appendChild(h3);
   if(!dls.length){var e3=document.createElement('div');e3.style.cssText='padding:14px;font-size:13px;color:var(--mu);text-align:center;';e3.textContent='Chua co don le';c3.appendChild(e3);}
@@ -1042,7 +1828,7 @@ function renderReport(){
   }
   el.appendChild(c3);
 
-  // ── Section 4: TON CUOI NGAY (Nhap - Xuat kho - Ban le) ──
+  // -- Section 4: TON CUOI NGAY (Nhap - Xuat kho - Ban le) --
   var c4=document.createElement('div');c4.className='rpt-card';
   var h4=document.createElement('div');h4.className='rpt-hd';
   h4.style.cssText='padding:11px 14px;background:linear-gradient(90deg,var(--gr),#155e34);color:#fff;font-size:13px;font-weight:600;';
@@ -1089,8 +1875,8 @@ function copyZaloH(){var data=getHangs(curDate);if(!data.length)return toast('Ch
 function copyZaloK(){var data=getKhos(curDate);if(!data.length)return toast('Chua co phieu');var m='NHAP/XUAT KHO NGAY '+fmtD(curDate)+'\n--------\n';data.forEach(function(k,i){m+=(i+1)+'. '+k.nv+' - Kho '+k.kho+'\n';k.products.forEach(function(p){if(p.name)m+='  ['+p.st+']['+p.hang+'] '+p.name+(p.qty?' x'+p.qty:'')+'\n';});if(k.notes)m+='  '+k.notes+'\n';});doCopy(m);}
 function copyZaloDl(){var data=getDls(curDate);if(!data.length)return toast('Chua co don le');var m='DON LE NGAY '+fmtD(curDate)+'\n--------\n';data.forEach(function(d,i){m+=(i+1)+'. '+(d.khach||'?')+(d.sdt?' - '+d.sdt:'')+'\n  NV: '+d.nv+' | '+d.payS+'\n';d.products.forEach(function(p){if(p.name)m+='  '+p.name+' x'+p.qty+' x'+fmt(p.price)+'d = '+fmt(p.sub)+'d\n';});if(d.ship)m+='  Ship: '+fmt(d.ship)+'d\n';m+='  Tong: '+fmt(d.total)+'d\n';if(d.notes)m+='  Uu dai: '+d.notes+'\n';if(d.addr)m+='  DC: '+d.addr+'\n';});doCopy(m);}
 function copyZaloRpt(){
-  var rpt2=getRptData(curDate);var hangs=rpt2.hangs;var khos=rpt2.khos;var dls=rpt2.dls;
-  var m='BAO CAO KHO NGAY '+fmtD(curDate)+'\n========\n';
+  var rpt2=getRptData(rptNgay);var hangs=rpt2.hangs;var khos=rpt2.khos;var dls=rpt2.dls;
+  var m='BAO CAO KHO NGAY '+fmtD(rptNgay)+'\n========\n';
   m+='HANG GIAO:\n';
   if(!hangs.length){m+='(Chua co)\n';}
   else{var gm={};hangs.forEach(function(h){var g=h.gh||'?';if(!gm[g])gm[g]={};h.products.forEach(function(p){if(!p.name)return;if(!gm[g][p.name])gm[g][p.name]={'Mang di':0,'Mang ve':0,'Thu hoi':0,'Tang':0,'Huy':0};gm[g][p.name][p.st]=(gm[g][p.name][p.st]||0)+(p.qty||0);});});Object.keys(gm).forEach(function(g){m+='  '+g+'\n';Object.keys(gm[g]).forEach(function(pr){var v=gm[g][pr];m+='    '+pr+': Di '+fmt(v['Mang di']||0)+' Ve '+fmt(v['Mang ve']||0)+(v['Thu hoi']>0?' TH '+fmt(v['Thu hoi']):'')+(v['Tang']>0?' Tang '+fmt(v['Tang']):'')+(v['Huy']>0?' Huy '+fmt(v['Huy']):'')+'\n';});});}
@@ -1113,7 +1899,7 @@ function bulkAdd(k){var ta=document.getElementById(k+'Bulk');var lines=ta.value.
 function clearAll(k){CFG[k].save([]);renderSettings();toast('Da xoa toan bo');}
 function importFile(input){var file=input.files[0];if(!file)return;var reader=new FileReader();var isCSV=file.name.toLowerCase().endsWith('.csv');reader.onload=function(e){var names=[];if(isCSV){names=e.target.result.split('\n').map(function(r){return r.split(',')[0].replace(/^"|"$/g,'').trim();}).filter(Boolean);}else{var wb2=XLSX.read(e.target.result,{type:'array'});var ws2=wb2.Sheets[wb2.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws2,{header:1});names=data.map(function(r){return String(r[0]||'').trim();}).filter(Boolean);}if(!names.length)return toast('Khong tim thay du lieu');var a=getProds();var added=0;names.forEach(function(v){if(v&&a.indexOf(v)<0){a.push(v);added++;}});svProds(a);input.value='';renderSettings();toast('Nhap '+added+' san pham');};if(isCSV)reader.readAsText(file,'utf-8');else reader.readAsArrayBuffer(file);}
 
-// ══ GOOGLE SHEET ══
+// == GOOGLE SHEET ==
 function getGsUrl(){return ld('kho_gs_url','');}
 function svGsUrl(v){sv('kho_gs_url',v);}
 var _gsPending=false;
@@ -1158,7 +1944,7 @@ function renderGsStatus(){
     bar.textContent='Da ket noi: ...'+url.slice(-30);
   } else {
     bar.style.background='var(--reb)';bar.style.color='var(--re)';
-    bar.textContent='Chua co URL — chua the dong bo';
+    bar.textContent='Chua co URL - chua the dong bo';
   }
 }
 
@@ -1194,7 +1980,7 @@ function _doPush(url){
   // inv_id | row_id | Ngay | Loai | Nhan vien | San pham | Tinh trang | Moi Cu
   // | So luong | Kho | Ghi chu | Don gia | Thanh tien SP | Tong don | Ship | Ship owner | Thanh toan
   var rows=[];
-  // Hang giao — 17 cols (cols 12-17 rong)
+  // Hang giao - 17 cols (cols 12-17 rong)
   hangs.forEach(function(h){
     var prods=h.products.filter(function(p){return p.name||p.qty;});
     if(!prods.length){
@@ -1205,7 +1991,7 @@ function _doPush(url){
       });
     }
   });
-  // Nhap/Xuat kho — 17 cols (cols 12-17 rong)
+  // Nhap/Xuat kho - 17 cols (cols 12-17 rong)
   khos.forEach(function(k){
     var prods=k.products.filter(function(p){return p.name||p.qty;});
     if(!prods.length){
@@ -1216,7 +2002,7 @@ function _doPush(url){
       });
     }
   });
-  // Don le — 17 cols day du
+  // Don le - 17 cols day du
   dls.forEach(function(d){
     var prods=d.products.filter(function(p){return p.name;});
     if(!prods.length){
@@ -1263,6 +2049,7 @@ function _doPush(url){
     _archiveData(ngay,hangsAll,khosAll,dlsAll);
     // Clear khoi danh sach chinh
     svHangs(ngay,[]);svKhos(ngay,[]);svDls(ngay,[]);
+    KD_CACHE=null; KD_NGAY={};
     renderHome();
     toast('Da dong bo & luu lich su!');
   }).catch(function(err){
@@ -1284,7 +2071,7 @@ function _archiveData(ngay,hangs,khos,dls){
   sv('kho_sync_history',hist);
 }
 
-// ══ LICH SU ══
+// == LICH SU ==
 function goHistory(){renderHistory();go('s-hist');}
 
 function renderHistory(){
@@ -1545,7 +2332,7 @@ function hdTai(baoLoi){
   var xong=0, loi=0;
   function ktra(){
     if(++xong<2)return;
-    hdVeBanner();
+    hdVeBanner(); veBell();
     if(document.getElementById('s-hdon').classList.contains('on')) hdVeList();
     if(baoLoi){
       var n=HD_DON.length+HD_CHAO.length;
@@ -1776,7 +2563,7 @@ function hdDayKho(rows,ngay,cb){
   fetch(url,{ method:'POST', mode:'no-cors',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({loai:'kho',ngay:ngay,device:device,rows:rows})
-  }).then(function(){ if(cb)cb(true); }).catch(function(){ if(cb)cb(false); });
+  }).then(function(){ KD_CACHE=null; KD_NGAY={}; if(cb)cb(true); }).catch(function(){ if(cb)cb(false); });
 }
 
 /* Nhan MOT don: bam la vao so kho + len Sheet + bao nguoc app hoa don */
@@ -1835,7 +2622,7 @@ function hdNhanMot(kieu,d,btn){
   // bo don khoi danh sach cho
   if(kieu==='don') HD_DON=HD_DON.filter(function(x){ return x.id!==d.id; });
   else             HD_CHAO=HD_CHAO.filter(function(x){ return x.id!==d.id; });
-  hdVeList(); hdVeBanner();
+  hdVeList(); hdVeBanner(); veBell();
 
   if(!coUrl){
     toast('Da nhan '+d.id+' ('+msg.join(' + ')+') - chua co URL Sheet kho, bam nut Sheet sau');
@@ -1849,8 +2636,496 @@ function hdNhanMot(kieu,d,btn){
   });
 }
 
+/* ============================================================
+   SO KHOP KHO - HOA DON  +  CHUONG THONG BAO  (v2.7)
+   Nguon so khop: lenh doi_soat_ngay tren backend van don -
+   server da doc Sheet kho, doc hoa don NV giao va tinh san
+   delta = (mang di - mang ve) - (Giao + Doi + Tang - Thu hoi).
+   App chi goi ve va hien thi, khong tu tinh lai.
+   ============================================================ */
+/* Backend van-don-sale (he MOI) - noi app giao-hang day hoa don vao tab HoaDon.
+   He cu Du_lieu_hoa_don khong con nhan hoa don nua (Toan xac nhan 28/07). */
+var VD_URL='https://script.google.com/macros/s/AKfycby__Ufl0jaNZMOMH05er2NB2TVC3rrhlHWCRh2jHF1YjjG1rPjQvQHnv4d_1Qyr3_seLQ/exec';
+var DS_CACHE={};            // ngay -> {luc, data}
+var dsNgay=todayStr();
+
+function qf(n){ n=Math.round((n||0)*10)/10; return n.toLocaleString('vi-VN'); }
+
+function lechNgay(ngay,delta){
+  var d=new Date(ngay+'T00:00:00'); d.setDate(d.getDate()+delta);
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+}
+/* Ngay da khoa so (backend khoa sau 2 ngay) -> so lieu khong doi nua,
+   cache vinh vien tren may, chi tai tu server dung 1 lan. */
+function dsKhoa(ngay){ return ngay < lechNgay(todayStr(),-2); }
+function dsLay(ngay){
+  if(DS_CACHE[ngay]) return DS_CACHE[ngay].data;
+  var v=ld('kho_ds_'+ngay,null);
+  if(v){ DS_CACHE[ngay]={luc:(dsKhoa(ngay)?Date.now():0), data:v}; return v; }
+  return null;
+}
+function dsTai(ngay, hienThi, cb){
+  var cu=dsLay(ngay);
+  var tuoi=DS_CACHE[ngay]?(Date.now()-DS_CACHE[ngay].luc):Infinity;
+  if(cu && (dsKhoa(ngay) || tuoi<60000)){ if(hienThi) dsVe(ngay); veBell(); if(cb)cb(cu); return; }
+  fetch(VD_URL+'?loai=doi_soat_kho&ngay='+encodeURIComponent(ngay))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      DS_CACHE[ngay]={luc:Date.now(), data:d};
+      if(d&&d.ok) sv('kho_ds_'+ngay,d);
+      if(hienThi) dsVe(ngay);
+      veBell();
+      if(cb)cb(d);
+    })
+    .catch(function(){
+      if(hienThi && !cu) toast('Khong goi duoc he van don - kiem tra mang');
+      if(cb)cb(cu||null);
+    });
+}
+/* Phan loai: NV da co it nhat 1 hoa don thi lech moi la lech that;
+   NV chua nhap hoa don -> "cho HD", khong bao lech de khoi nhieu. */
+function dsPhanTich(d){
+  var coHD={}, lech=[], choHD=[];
+  var rows=(d&&d.tonKho)||[];
+  rows.forEach(function(r){ if((r.giaoHD||0)>0) coHD[r.nguoiGiao]=1; });
+  rows.forEach(function(r){
+    if(Math.abs(r.delta||0)<=0.001) return;
+    if(coHD[r.nguoiGiao]) lech.push(r); else choHD.push(r);
+  });
+  return {lech:lech, choHD:choHD, coHD:coHD};
+}
+function dsTrong(el,ttl,sub){
+  var e=document.createElement('div'); e.className='empty';
+  var a=document.createElement('div'); a.className='empty-ico'; a.textContent='...';
+  var b=document.createElement('div'); b.className='empty-ttl'; b.textContent=ttl;
+  var c2=document.createElement('div'); c2.className='empty-sub'; c2.textContent=sub||'';
+  e.appendChild(a); e.appendChild(b); e.appendChild(c2); el.appendChild(e);
+}
+function dsVe(ngay){
+  var el=document.getElementById('dsList'); if(!el)return;
+  el.innerHTML='';
+  var pills=document.getElementById('dsPills'); if(pills)pills.innerHTML='';
+  var sub=document.getElementById('dsSub');
+  var c=DS_CACHE[ngay], d=c&&c.data;
+  if(!d){ if(sub)sub.textContent='Dang tai...'; dsTrong(el,'Dang tai tu he van don','Cho vai giay'); return; }
+  if(!d.ok){ if(sub)sub.textContent='Loi'; dsTrong(el,'He van don bao loi','Neu bao loai khong ho tro: can dan kho_doisoat.gs va deploy backend van-don-sale'); return; }
+  var rows=d.tonKho||[];
+  if(!rows.length){ if(sub)sub.textContent=fmtD(ngay); dsTrong(el,'Khong co du lieu kho ngay nay','Kho chua day phieu nao len Sheet'); return; }
+  var pt=dsPhanTich(d);
+  if(sub) sub.textContent=fmtD(ngay)+' - '+(pt.lech.length?(pt.lech.length+' dong lech'):'khop het');
+  if(pills){
+    function mkPill(txt,bg,mau){ var p2=document.createElement('span'); p2.className='pill'; p2.style.background=bg; p2.style.color=mau; p2.textContent=txt; pills.appendChild(p2); }
+    var soNV={}; rows.forEach(function(r){ soNV[r.nguoiGiao]=1; });
+    mkPill(Object.keys(soNV).length+' NV','var(--blb)','var(--bl)');
+    if(pt.lech.length) mkPill(pt.lech.length+' lech','var(--reb)','var(--re)');
+    if(pt.choHD.length) mkPill(pt.choHD.length+' cho HD','var(--amb)','var(--am)');
+  }
+  var nvs={};
+  rows.forEach(function(r){ var k=r.nguoiGiao||'?'; (nvs[k]=nvs[k]||[]).push(r); });
+  Object.keys(nvs).sort().forEach(function(nv){
+    var ds=nvs[nv];
+    var lechNV=ds.filter(function(r){ return Math.abs(r.delta||0)>0.001; });
+    var coHD=!!pt.coHD[nv];
+    var card=document.createElement('div'); card.className='ecard'; card.style.cursor='default';
+    var head=document.createElement('div'); head.className='ecard-h';
+    var t=document.createElement('div'); t.style.cssText='flex:1;font-size:13.5px;font-weight:600;'; t.textContent=nv;
+    var bg=document.createElement('span'); bg.className='badge';
+    if(!coHD){ bg.style.background='var(--amb)'; bg.style.color='var(--am)'; bg.textContent='cho HD'; }
+    else if(lechNV.length){ bg.style.background='var(--reb)'; bg.style.color='var(--re)'; bg.textContent='LECH '+lechNV.length+' SP'; }
+    else { bg.style.background='var(--grb)'; bg.style.color='var(--gr)'; bg.textContent='khop'; }
+    head.appendChild(t); head.appendChild(bg);
+    var body=document.createElement('div'); body.style.cssText='padding:2px 14px 8px;';
+    ds.forEach(function(r){
+      var line=document.createElement('div'); line.className='ds-bd';
+      var left=document.createElement('div'); left.style.flex='1';
+      var n1=document.createElement('div'); n1.style.cssText='font-weight:600;font-size:12.5px;'; n1.textContent=r.sanPham;
+      var n2=document.createElement('div'); n2.style.cssText='color:var(--mu);font-size:11.5px;margin-top:1px;';
+      n2.textContent='Di '+qf(r.khoDi)+' - Ve '+qf(r.khoVe)+' = '+qf(r.khoDaGiao)+' | HD '+qf(r.giaoHD);
+      left.appendChild(n1); left.appendChild(n2);
+      if(r.hdGiao!==undefined){
+        var n3=document.createElement('div');
+        n3.style.cssText='color:var(--mu);font-size:11px;margin-top:1px;';
+        n3.textContent='HD: Ban '+qf(r.hdGiao)+' - Doi '+qf(r.hdDoi||0)+' - Tang '+qf(r.hdTang||0)+' - Thu hoi '+qf(r.hdThu||0);
+        left.appendChild(n3);
+      }
+      var dv=document.createElement('span'); dv.className='badge'; var delta=r.delta||0;
+      if(Math.abs(delta)<=0.001){ dv.style.background='var(--grb)'; dv.style.color='var(--gr)'; dv.textContent='khop'; }
+      else if(coHD){ dv.style.background='var(--reb)'; dv.style.color='var(--re)'; dv.textContent='lech '+(delta>0?'+':'')+qf(delta); }
+      else { dv.style.background='var(--amb)'; dv.style.color='var(--am)'; dv.textContent='cho '+qf(delta); }
+      line.appendChild(left); line.appendChild(dv);
+      body.appendChild(line);
+    });
+    card.appendChild(head); card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+/* ---------------- SO KHOP THEO THANG ---------------- */
+var dsThang=dsNgay.slice(0,7);
+function dsNgayThang(thang){
+  var hom=todayStr();
+  var y=+thang.slice(0,4), m=+thang.slice(5,7);
+  var soNgay=new Date(y,m,0).getDate(), out=[];
+  for(var d2=1;d2<=soNgay;d2++){
+    var n=thang+'-'+('0'+d2).slice(-2);
+    if(n>hom) break;
+    out.push(n);
+  }
+  return out;
+}
+function dsVeThang(){
+  var lbl=document.getElementById('dsThangLbl');
+  if(lbl) lbl.textContent='Thang '+(+dsThang.slice(5,7))+'/'+dsThang.slice(0,4);
+  var strip=document.getElementById('dsStrip'); if(!strip)return;
+  strip.innerHTML='';
+  var days=dsNgayThang(dsThang);
+  days.forEach(function(n){
+    var on=(n===dsNgay);
+    var b=document.createElement('button');
+    b.style.cssText='position:relative;flex-shrink:0;min-width:38px;padding:8px 4px;border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid '+(on?'var(--bl)':'var(--bd)')+';background:'+(on?'var(--blb)':'var(--sf)')+';color:'+(on?'var(--bl)':'var(--tx)')+';';
+    b.textContent=String(+n.slice(8));
+    var d3=dsLay(n);
+    if(d3&&d3.ok&&dsPhanTich(d3).lech.length){
+      var dot=document.createElement('span');
+      dot.style.cssText='position:absolute;top:3px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--re);';
+      b.appendChild(dot);
+    }
+    b.addEventListener('click',function(){ dsNgay=n; dsVeThang(); dsVe(n); dsTai(n,true); });
+    strip.appendChild(b);
+  });
+  var idx=days.indexOf(dsNgay);
+  if(idx>=0) strip.scrollLeft=Math.max(0, idx*44-120);
+}
+var dsDangTai=false;
+function dsTaiThang(){
+  var days=dsNgayThang(dsThang);
+  var hang=days.filter(function(n){ return !dsLay(n) || !dsKhoa(n); });
+  if(!hang.length){ dsVeThang(); return; }
+  hang.sort(function(a,b){ return a===dsNgay?-1:(b===dsNgay?1:(a<b?1:-1)); });
+  var tong=hang.length, xong=0;
+  var sub=document.getElementById('dsSub');
+  dsDangTai=true;
+  function tienDo(){ if(sub&&dsDangTai) sub.textContent='Dang tai thang... '+xong+'/'+tong; }
+  tienDo();
+  function chay(){
+    var batch=hang.splice(0,4);
+    if(!batch.length){
+      dsDangTai=false;
+      dsVeThang(); dsVe(dsNgay); veBell();
+      return;
+    }
+    var cho=batch.length;
+    batch.forEach(function(n){
+      dsTai(n,false,function(){ xong++; tienDo(); if(--cho===0) chay(); });
+    });
+  }
+  chay();
+}
+function goDoiSoat(){
+  bellDong();
+  dsThang=dsNgay.slice(0,7);
+  dsVeThang();
+  dsVe(dsNgay);
+  go('s-dsoat');
+  dsTaiThang();
+}
+function dsDoiThang(huong){
+  var y=+dsThang.slice(0,4), m=+dsThang.slice(5,7)+huong;
+  if(m<1){m=12;y--;}
+  if(m>12){m=1;y++;}
+  var t=y+'-'+('0'+m).slice(-2);
+  if(t>todayStr().slice(0,7)) return;
+  dsThang=t;
+  var days=dsNgayThang(t);
+  if(days.length) dsNgay=days[days.length-1];
+  dsVeThang(); dsVe(dsNgay); dsTaiThang();
+}
+function dsTaiLai(){
+  DS_CACHE={};
+  try{ localStorage.removeItem('kho_ds_'+dsNgay); }catch(e){}
+  goDoiSoat();
+}
+
+/* ============================================================
+   KHO_DATA - doc Sheet kho realtime (backend van don, route moi)
+   Lich su gon: [ngay, loai, nv, sp, tt, mc, sl, kho]
+   Chi tiet ngay: [invId, ngay, loai, nv, sp, tt, mc, sl, kho,
+                   ghiChu, donGia, thanhTien, tongDon, ship, shipOwner, thanhToan, khach]
+   ============================================================ */
+var KD_CACHE=ld('kho_kd_hist',null);   // {luc, rows} - toan bo lich su
+if(KD_CACHE && typeof KD_CACHE.luc!=='number') KD_CACHE=null;
+var KD_NGAY={};                        // ngay -> {luc, rows} chi tiet
+function kdTai(cb){
+  if(KD_CACHE && (Date.now()-KD_CACHE.luc)<300000){ if(cb)cb(KD_CACHE.rows); return; }
+  fetch(VD_URL+'?loai=kho_data')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d&&d.ok){ KD_CACHE={luc:Date.now(), rows:d.rows||[]}; sv('kho_kd_hist',KD_CACHE); }
+      if(cb)cb(KD_CACHE?KD_CACHE.rows:null);
+    })
+    .catch(function(){ if(cb)cb(KD_CACHE?KD_CACHE.rows:null); });
+}
+function kdTaiNgay(ngay, cb){
+  var c=KD_NGAY[ngay];
+  if(c && (Date.now()-c.luc)<60000){ if(cb)cb(c.rows); return; }
+  fetch(VD_URL+'?loai=kho_data&ngay='+encodeURIComponent(ngay))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d&&d.ok) KD_NGAY[ngay]={luc:Date.now(), rows:d.rows||[]};
+      if(cb)cb(KD_NGAY[ngay]?KD_NGAY[ngay].rows:null);
+    })
+    .catch(function(){ if(cb)cb(c?c.rows:null); });
+}
+/* Dong chi tiet 1 ngay tren Sheet -> phieu dang app (nhom theo inv_id) */
+function kdPhieuTuRows(rows){
+  var H={},K={},D={},dem=0;
+  rows.forEach(function(r){
+    var id=String(r[0]||'')||('x'+(dem++));
+    var loai=String(r[2]||''), nv=String(r[3]||''), sp=String(r[4]||'');
+    var tt=String(r[5]||''), mc=String(r[6]||'')||'Moi';
+    var sl=parseFloat(r[7])||0, kho2=String(r[8]||''), ghi=String(r[9]||'');
+    if(loai==='HangGiao'){
+      if(!H[id])H[id]={id:id,gh:nv,notes:'',products:[]};
+      if(sp)H[id].products.push({name:sp,qty:sl,st:tt||'Mang di',hang:mc});
+      if(ghi&&!H[id].notes)H[id].notes=ghi;
+    } else if(loai==='NhapXuat'){
+      if(!K[id])K[id]={id:id,nv:nv,kho:kho2||'Ha Noi',notes:'',products:[]};
+      if(sp)K[id].products.push({name:sp,qty:sl,st:tt||'Nhap',hang:mc});
+      if(ghi&&!K[id].notes)K[id].notes=ghi;
+    } else if(loai==='DonLe'){
+      if(!D[id])D[id]={id:id,nv:nv,payS:'',ship:0,shipOwner:'khach',notes:'',khach:'',sdt:'',addr:'',products:[],total:0};
+      if(sp)D[id].products.push({name:sp,qty:sl,price:parseFloat(r[10])||0,sub:parseFloat(r[11])||0});
+      var tong=parseFloat(r[12]); if(tong)D[id].total=tong;
+      var sh2=parseFloat(r[13]); if(sh2)D[id].ship=sh2;
+      if(r[14])D[id].shipOwner=String(r[14]);
+      if(r[15])D[id].payS=String(r[15]);
+      if(r[16])D[id].khach=String(r[16]);
+      if(ghi&&!D[id].notes)D[id].notes=ghi;
+    }
+  });
+  function arr(o){ var a=[],k; for(k in o) if(o.hasOwnProperty(k)) a.push(o[k]); return a; }
+  return {hangs:arr(H), khos:arr(K), dls:arr(D)};
+}
+function kdPhieuCache(ngay){
+  var c=KD_NGAY[ngay];
+  if(!c) return null;
+  var ph=kdPhieuTuRows(c.rows);
+  ph.so=c.rows.length;
+  return ph;
+}
+
+/* ---------------- TON KHO (kiem ton) ---------------- */
+/* Phieu tren may chua day -> dong gia lap de cong vao ton/excel */
+function localChuaDayRows(){
+  var out=[], ng=todayStr();
+  getHangs(ng).filter(chuaLenSheet).forEach(function(h){
+    (h.products||[]).forEach(function(p2){ if(p2.name) out.push([ng,'HangGiao',h.gh||'',p2.name,p2.st||'Mang di',p2.hang||'Moi',p2.qty||0,'']); });
+  });
+  getKhos(ng).filter(chuaLenSheet).forEach(function(k){
+    (k.products||[]).forEach(function(p2){ if(p2.name) out.push([ng,'NhapXuat',k.nv||'',p2.name,p2.st||'Nhap',p2.hang||'Moi',p2.qty||0,k.kho||'']); });
+  });
+  getDls(ng).filter(chuaLenSheet).forEach(function(d2){
+    (d2.products||[]).forEach(function(p2){ if(p2.name) out.push([ng,'DonLe',d2.nv||'',p2.name,'Ban','',p2.qty||0,'']); });
+  });
+  return out;
+}
+/* Cong thuc giu dung nhu bao cao: Ton = Nhap - Xuat kho - Ban le */
+function tonTinh(denNgay){
+  denNgay=denNgay||'9999-12-31';
+  var rows=(KD_CACHE?KD_CACHE.rows:[]).concat(localChuaDayRows());
+  var map={};
+  rows.forEach(function(r){
+    if(String(r[0]||'')>denNgay) return;   // ton = cong don den het ngay duoc chon
+    var loai=String(r[1]||''), sp=String(r[3]||''), tt=String(r[4]||''), sl=parseFloat(r[6])||0;
+    if(!sp) return;
+    if(loai==='NhapXuat'){
+      if(!map[sp])map[sp]={nhap:0,xuat:0,ban:0};
+      if(tt==='Nhap') map[sp].nhap+=sl; else map[sp].xuat+=sl;
+    } else if(loai==='DonLe'){
+      if(!map[sp])map[sp]={nhap:0,xuat:0,ban:0};
+      map[sp].ban+=sl;
+    }
+  });
+  return map;
+}
+var tonNgay=todayStr();
+function tonVeNgayUI(){
+  var l=document.getElementById('tonLbl'); if(l)l.textContent=fmtDFull(tonNgay);
+  var i=document.getElementById('tonInp'); if(i)i.value=tonNgay;
+}
+function goTon(){
+  bellDong();
+  tonNgay=todayStr();
+  tonVeNgayUI();
+  veTon();
+  go('s-ton');
+  kdTai(function(){ if(document.getElementById('s-ton').classList.contains('on')) veTon(); });
+}
+function tonDoiNgay(d){
+  var n=lechNgay(tonNgay,d);
+  if(n>todayStr()) return;
+  tonNgay=n; tonVeNgayUI(); veTon();
+}
+function tonChonNgay(){
+  var i=document.getElementById('tonInp');
+  if(i&&i.value&&i.value<=todayStr()){ tonNgay=i.value; tonVeNgayUI(); veTon(); }
+}
+function veTon(){
+  var el=document.getElementById('tonList'); if(!el)return;
+  el.innerHTML='';
+  var sub=document.getElementById('tonSub');
+  if(!KD_CACHE){
+    if(sub)sub.textContent='Dang tai tu Sheet kho...';
+    dsTrong(el,'Dang tai du lieu','Lan dau hoi lau, cac lan sau se nhanh');
+    return;
+  }
+  var map=tonTinh(tonNgay);
+  var oTim=document.getElementById('tonTim');
+  var kw=hdNorm(oTim?oTim.value:'');
+  var keys=Object.keys(map).sort();
+  if(kw) keys=keys.filter(function(k){ return hdNorm(k).indexOf(kw)>=0; });
+  if(sub){
+    var luc=new Date(KD_CACHE.luc);
+    sub.textContent=keys.length+' SP - ton den het '+fmtD(tonNgay)+' - cap nhat '+('0'+luc.getHours()).slice(-2)+':'+('0'+luc.getMinutes()).slice(-2);
+  }
+  if(!keys.length){ dsTrong(el,'Khong thay san pham nao',''); return; }
+  var card=document.createElement('div'); card.className='ecard'; card.style.cursor='default';
+  var hd=document.createElement('div');
+  hd.style.cssText='display:flex;gap:6px;padding:9px 12px;border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;';
+  ['San pham','Nhap','Xuat','Ban','Ton'].forEach(function(t2,i2){
+    var sp2=document.createElement('span');
+    sp2.style.cssText=i2===0?'flex:1;':'width:'+(i2===4?56:(i2===3?46:52))+'px;text-align:right;';
+    sp2.textContent=t2;
+    hd.appendChild(sp2);
+  });
+  card.appendChild(hd);
+  keys.forEach(function(sp3){
+    var v2=map[sp3], ton=v2.nhap-v2.xuat-v2.ban;
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;gap:6px;padding:8px 12px;border-bottom:1px dashed var(--bd);font-size:12px;align-items:center;';
+    function cell(txt,w,mau,dam){
+      var s2=document.createElement('span');
+      s2.style.cssText=(w?('width:'+w+'px;text-align:right;'):'flex:1;')+(mau?('color:'+mau+';'):'')+(dam?'font-weight:700;':'');
+      s2.textContent=txt;
+      return s2;
+    }
+    row.appendChild(cell(sp3,0,'',true));
+    row.appendChild(cell(fmt(v2.nhap),52,'var(--gr)'));
+    row.appendChild(cell(fmt(v2.xuat),52,'var(--re)'));
+    row.appendChild(cell(fmt(v2.ban),46,'var(--pu)'));
+    row.appendChild(cell(fmt(ton),56,ton<0?'var(--re)':'var(--tx)',true));
+    card.appendChild(row);
+  });
+  el.appendChild(card);
+}
+
+/* ---------------- XUAT EXCEL BAO CAO ---------------- */
+function xuatExcelBaoCao(){
+  if(typeof XLSX==='undefined'){ toast('Chua tai duoc thu vien Excel - kiem tra mang roi mo lai app'); return; }
+  var ngay=rptNgay;
+  var rows=(KD_NGAY[ngay]&&KD_NGAY[ngay].rows)||[];
+  var mayRows=localChuaDayRows().filter(function(r){ return r[0]===ngay; });
+  if(!rows.length && !mayRows.length){ toast('Chua co du lieu ngay nay de xuat'); return; }
+  var aoa=[['ID','Ngay','Loai','Nhan vien','San pham','Tinh trang','Moi/Cu','So luong','Kho','Ghi chu','Don gia','Thanh tien','Tong don','Ship','Ship owner','Thanh toan','Khach']];
+  rows.forEach(function(r){
+    aoa.push([r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15],r[16]]);
+  });
+  mayRows.forEach(function(r){
+    aoa.push(['(chua day)',r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],'','','','','','','','']);
+  });
+  var map=tonTinh(ngay);   // ton den het ngay dang xem
+  var aoa2=[['San pham','Nhap','Xuat kho','Ban le','Ton den '+fmtD(ngay)]];
+  Object.keys(map).sort().forEach(function(sp4){
+    var v3=map[sp4];
+    aoa2.push([sp4,v3.nhap,v3.xuat,v3.ban,v3.nhap-v3.xuat-v3.ban]);
+  });
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'ChiTiet');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa2),'TonKho');
+  var out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  var blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var url=URL.createObjectURL(blob);
+  var ten='bao-cao-kho-'+ngay+'.xlsx';
+  if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+    var lk2=document.getElementById('xlLink');
+    lk2.href=url; lk2.setAttribute('download',ten);
+    document.getElementById('xlOv').classList.add('on');
+  } else {
+    var a2=document.createElement('a');
+    a2.href=url; a2.download=ten;
+    document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
+    toast('Da xuat '+ten);
+  }
+  setTimeout(function(){ try{URL.revokeObjectURL(url);}catch(e){} },60000);
+}
+
+/* ---------------- CHUONG THONG BAO ---------------- */
+function chuaLenSheet(x){ return !x.pushed; }
+function demChuaLenSheet(){
+  var ng=todayStr();
+  return getHangs(ng).filter(chuaLenSheet).length
+       + getKhos(ng).filter(chuaLenSheet).length
+       + getDls(ng).filter(chuaLenSheet).length;
+}
+function veBell(){
+  var b=document.getElementById('bellCnt'); if(!b)return;
+  var n=HD_DON.length+HD_CHAO.length;
+  var d=dsLay(todayStr());
+  if(d&&d.ok) n+=dsPhanTich(d).lech.length;
+  b.textContent=n>99?'99+':String(n);
+  b.style.display=n?'flex':'none';
+}
+function bellDong(){ var p=document.getElementById('bellPanel'); if(p)p.classList.remove('on'); }
+function toggleBell(){
+  var p=document.getElementById('bellPanel'); if(!p)return;
+  if(p.classList.contains('on')){ p.classList.remove('on'); return; }
+  p.innerHTML='';
+  var items=[];
+  var nDon=HD_DON.length+HD_CHAO.length;
+  if(nDon) items.push({mau:'var(--bl)', txt:'Co '+nDon+' don tu app hoa don cho nhan', act:goHdon});
+  var d=dsLay(todayStr());
+  if(d&&d.ok){
+    var pt=dsPhanTich(d);
+    if(pt.lech.length) items.push({mau:'var(--re)', txt:pt.lech.length+' san pham LECH kho - hoa don hom nay', act:function(){ dsNgay=todayStr(); goDoiSoat(); }});
+  }
+  var soPhieu=demChuaLenSheet();
+  if(soPhieu) items.push({mau:'var(--am)', txt:soPhieu+' phieu hom nay chua len Sheet - bam nut Sheet de dong bo', act:goHome});
+  if(!items.length) items.push({mau:'var(--gr)', txt:'Khong co viec nao can xu ly', act:null});
+  items.push({mau:'var(--mu)', txt:'Mo man so khop kho - hoa don', act:function(){ dsNgay=todayStr(); goDoiSoat(); }});
+  items.push({mau:'var(--mu)', txt:'Mo danh sach ton kho', act:goTon});
+  items.forEach(function(it){
+    var row=document.createElement('div'); row.className='bell-it';
+    var dot=document.createElement('span'); dot.className='bell-dot'; dot.style.background=it.mau;
+    var tx=document.createElement('span'); tx.style.flex='1'; tx.textContent=it.txt;
+    row.appendChild(dot); row.appendChild(tx);
+    if(it.act) row.addEventListener('click', function(){ bellDong(); it.act(); });
+    p.appendChild(row);
+  });
+  p.classList.add('on');
+  dsTai(todayStr(), false);   // lam moi ngam
+  hdTai(false);
+}
+document.addEventListener('click', function(ev){
+  var p=document.getElementById('bellPanel');
+  if(!p || !p.classList.contains('on')) return;
+  var b=document.getElementById('bellBtn');
+  if(p.contains(ev.target) || (b&&b.contains(ev.target))) return;
+  p.classList.remove('on');
+});
+
+(function donDepCache(){
+  try{
+    var moc='kho_ds_'+lechNgay(todayStr(),-62), xoa=[];
+    for(var i2=0;i2<localStorage.length;i2++){
+      var k2=localStorage.key(i2);
+      if(k2 && k2.indexOf('kho_ds_')===0 && k2<moc) xoa.push(k2);
+    }
+    xoa.forEach(function(k3){ localStorage.removeItem(k3); });
+  }catch(e){}
+})();
 renderHome();
 hdTai(false);
+dsTai(todayStr(), false);
+setInterval(function(){ DS_CACHE={}; hdTai(false); dsTai(todayStr(), false); }, 300000);
 </script>
 </body>
 </html>
