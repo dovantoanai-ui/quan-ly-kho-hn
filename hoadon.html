@@ -302,6 +302,7 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
         <div class="mb"><label>URL Web App vận đơn sale (tab Siêu thị)</label><input id="cVds" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="note">Để trống ô nào thì ô đó quay về link cố định trong app.</div>
       </div>
+      <div class="note" id="mdInfo" style="margin-bottom:10px">Đang kiểm tra danh mục chuẩn...</div>
       <div class="rowbtn mb">
         <button class="btn ghost" data-act="taiDM">Tải lại danh mục</button>
         <button class="btn" data-act="luuCfg">Lưu</button>
@@ -464,6 +465,7 @@ var LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlQAAACMCAMAAACNtMdwAA
 function pad(n){ return String(n).padStart(2,'0'); }
 function homNay(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function thangNay(){ return homNay().slice(0,7); }
+function gioPhutNgay(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes())+' '+pad(d.getDate())+'/'+pad(d.getMonth()+1); }
 function ngayVN(s){ if(!s) return ''; var p=String(s).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : s; }
 function ld(k,d){ try{ var v=localStorage.getItem(k); return v!==null?JSON.parse(v):d; }catch(e){ return d; } }
 function sv(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -1237,8 +1239,10 @@ function taiDanhMuc(cb){
   if(!gsUrl()){ toast('Chưa cài URL Web App'); if(cb) cb(); return; }
   jsonp({what:'all', ngay:60}, function(d){
     if(!d || !d.ok){ toast('Lỗi đọc Sheet: '+((d&&d.error)||'không rõ')); if(cb) cb(); return; }
-    if(d.cat && d.cat.length){ CAT=d.cat; sv('hdnt_cat',CAT); }
-    if(d.nvs){ NVS=d.nvs; sv('hdnt_nvs',NVS); veNvSelect(); }
+    // tab Data về sau MasterData thì ghép lại, không để mất SP của danh mục chuẩn
+    if(d.cat && d.cat.length){ CAT=d.cat; mdGhepVaoCat(); sv('hdnt_cat',CAT); }
+    // có DM_NhanVien thì lấy làm chuẩn, cột G tab Data chỉ dùng khi MasterData hỏng
+    if(d.nvs && !MDNV.length){ NVS=d.nvs; sv('hdnt_nvs',NVS); veNvSelect(); }
     if(d.kh)  { KH=d.kh;  sv('hdnt_kh',KH); }
     SHEET.don=d.don||[]; SHEET.thu=d.thu||[];
     sv('hdnt_sheet',SHEET);
@@ -1503,12 +1507,17 @@ var PRODS  = ld('hdnt_vds_prods', []);    // danh sách tên SP hệ sale
    Đọc bằng gviz + JSONP nên không dính CORS. Sheet phải để
    Chia sẻ > Bất kỳ ai có đường liên kết > Người xem.
    ============================================================ */
-var MD_ID  = '1koko05SHlVy9f2qqhFNqvu6NeD-U8ktvU1UFd0ci0sQ';
-var MD_TAB = 'DM_SanPham';
+var MD_ID     = '1koko05SHlVy9f2qqhFNqvu6NeD-U8ktvU1UFd0ci0sQ';
+var MD_TAB    = 'DM_SanPham';
+var MD_TAB_NV = 'DM_NhanVien';
 var MDSP   = ld('hdnt_md_sp', []);   // [{ma, ten (cột F), tenIn (cột C), dvt}]
+var MDNV   = ld('hdnt_md_nv', []);   // [{ma, ten (cột C), ngan (cột D), chucvu}]
+var MD_LUC = ld('hdnt_md_luc', '');  // nạp gần nhất lúc nào
 
 var _mdDem = 0;
-function mdTai(cb){
+/* Đọc 1 tab của Sheet. Mỗi lần gọi gắn tham số _ khác nhau để trình duyệt
+   không trả bản cache cũ — anh sửa Sheet là lần tải sau thấy ngay. */
+function mdTai(tab, phanTich, cb){
   var ten = 'mdcb' + (++_mdDem) + '_' + Date.now().toString(36);
   var s = document.createElement('script');
   var xong = false;
@@ -1517,13 +1526,32 @@ function mdTai(cb){
     if(s && s.parentNode) s.parentNode.removeChild(s);
   }
   function tra(kq){ if(xong) return; xong = true; donDep(); if(cb) cb(kq); }
-  window[ten] = function(d){ tra(mdPhanTich(d)); };
+  window[ten] = function(d){ tra(phanTich(d)); };
   s.onerror = function(){ tra(null); };
   s.src = 'https://docs.google.com/spreadsheets/d/' + MD_ID + '/gviz/tq'
         + '?tqx=responseHandler:' + ten
-        + '&headers=1&sheet=' + encodeURIComponent(MD_TAB);
+        + '&headers=1&sheet=' + encodeURIComponent(tab)
+        + '&_=' + Date.now();
   document.body.appendChild(s);
   setTimeout(function(){ tra(null); }, 15000);
+}
+/* tab DM_NhanVien — A STT · B Mã NV · C Tên · D Tên ngắn gọn · E Chức vụ
+   Lấy cột D làm tên dùng trong app (theo yêu cầu của Toàn). */
+function mdPhanTichNV(d){
+  var rows = (d && d.table && d.table.rows) || [];
+  var ds = [], da = {};
+  rows.forEach(function(r){
+    var c = r.c || [];
+    function o(i){ return (c[i] && c[i].v != null) ? String(c[i].v).trim() : ''; }
+    var ngan = o(3) || o(2);      // cột D, trống thì lấy cột C
+    if(!ngan) return;
+    if(normKey(ngan) === 'tenngangon') return;
+    var k = normKey(ngan);
+    if(da[k]) return;
+    da[k] = 1;
+    ds.push({ ma:o(1), ten:o(2)||ngan, ngan:ngan, chucvu:o(4) });
+  });
+  return ds;
 }
 function mdPhanTich(d){
   var rows = (d && d.table && d.table.rows) || [];
@@ -1576,21 +1604,55 @@ function mdGhepVaoCat(){
   if(them) sv('hdnt_cat', CAT);
   return them;
 }
-/* nạp danh mục chuẩn rồi áp vào cả 2 màn */
+/* nạp danh mục chuẩn: sản phẩm + nhân viên, rồi áp vào các màn */
 function mdNap(baoLoi, cb){
-  mdTai(function(ds){
-    if(!ds || !ds.length){
-      if(baoLoi) toast('Không đọc được MasterData — kiểm tra quyền chia sẻ Sheet');
-      if(cb) cb(false);
-      return;
+  var xongSP = false, xongNV = false, okSP = false, okNV = false, themSP = 0;
+  function kiemXong(){
+    if(!xongSP || !xongNV) return;
+    if(okSP || okNV){
+      MD_LUC = gioPhutNgay();
+      sv('hdnt_md_luc', MD_LUC);
     }
-    MDSP = ds;
-    sv('hdnt_md_sp', MDSP);
-    var them = mdGhepVaoCat();
-    if(baoLoi) toast('Danh mục chuẩn: '+MDSP.length+' SP'+(them?' · thêm '+them+' SP mới vào màn Lập đơn':''));
-    veCatTable(); veLines(); stVeLines();
-    if(cb) cb(true);
+    veMdInfo();
+    if(baoLoi){
+      if(!okSP && !okNV) toast('Không đọc được MasterData — kiểm tra quyền chia sẻ Sheet');
+      else toast('Đã nạp '+MDSP.length+' SP · '+MDNV.length+' NV'+(themSP?' · thêm '+themSP+' SP mới vào màn Lập đơn':''));
+    }
+    if(cb) cb(okSP || okNV);
+  }
+  mdTai(MD_TAB, mdPhanTich, function(ds){
+    xongSP = true;
+    if(ds && ds.length){
+      okSP = true;
+      MDSP = ds; sv('hdnt_md_sp', MDSP);
+      themSP = mdGhepVaoCat();
+      veCatTable(); veLines(); stVeLines();
+    }
+    kiemXong();
   });
+  mdTai(MD_TAB_NV, mdPhanTichNV, function(ds){
+    xongNV = true;
+    if(ds && ds.length){
+      okNV = true;
+      MDNV = ds; sv('hdnt_md_nv', MDNV);
+      NVS = MDNV.map(function(x){ return x.ngan; });
+      sv('hdnt_nvs', NVS);
+      veNvSelect();
+    }
+    kiemXong();
+  });
+}
+/* dòng trạng thái trong Cài đặt: nạp bao nhiêu, lúc nào */
+function veMdInfo(){
+  var el = $('mdInfo'); if(!el) return;
+  if(!MDSP.length && !MDNV.length){
+    el.innerHTML = 'Chưa nạp được danh mục chuẩn. Sheet <b>MasterData-NemThanh</b> phải để chế độ '+
+                   '<b>Bất kỳ ai có đường liên kết · Người xem</b>, rồi bấm Tải lại danh mục.';
+    return;
+  }
+  el.innerHTML = '<b>'+MDSP.length+'</b> sản phẩm · <b>'+MDNV.length+'</b> nhân viên'+
+                 (MD_LUC ? ' · nạp lúc '+esc(MD_LUC) : '')+
+                 '<br>Sửa Sheet xong, bấm <b>Tải lại danh mục</b> hoặc mở lại app là dữ liệu mới về.';
 }
 var ST = { ch:'', loai:'order', hen:'', ck:0, vat:0, lines:[] };
 
@@ -2233,6 +2295,7 @@ function init(){
   stVeTatCa();
   chVeTatCa();
   veKhoChaoList();
+  veMdInfo();
   taiVds(false);
   mdNap(false);      // danh mục chuẩn MasterData — im lặng, hỏng thì dùng nguồn cũ
 
