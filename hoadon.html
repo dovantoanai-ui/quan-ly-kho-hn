@@ -1346,7 +1346,7 @@ document.addEventListener('click', function(ev){
   else if(act==='huyDon') huyDon(id);
   else if(act==='xacNhan') xacNhan(id);
   else if(act==='taiKho') taiDanhMuc(function(){ veKhoList(); });
-  else if(act==='taiDM') taiDanhMuc();
+  else if(act==='taiDM'){ toast('Đang tải danh mục...'); mdNap(true); taiDanhMuc(); }
   else if(act==='luuCfg') luuCfgKetNoi();
   else if(act==='doiLink') doiLink();
   else if(act==='luuCty') luuCty();
@@ -1372,7 +1372,7 @@ document.addEventListener('click', function(ev){
   else if(act==='stVatBat') stBatVat(!ST.vatBat);
   else if(act==='stPhieu') stMoPhieu(id);
   else if(act==='khoPhieu'){ KHO_PHIEU=v; sv('hdnt_kho_phieu',v); danhDauPill(el); }
-  else if(act==='stTaiDM'){ toast('Đang tải danh sách...'); taiVds(true); }
+  else if(act==='stTaiDM'){ toast('Đang tải danh sách...'); mdNap(true); taiVds(true); }
   else if(act==='stTab'){ danhDauPill(el); stDoiTab(v); }
   else if(act==='chChon') chChonCH(v);
   else if(act==='chThemDong') chThemDong();
@@ -1493,6 +1493,105 @@ function vdsUrl(){ return ld('hdnt_vds_url','') || VDS_MACDINH; }
 
 var STORES = ld('hdnt_vds_stores', []);   // danh sách tên CH
 var PRODS  = ld('hdnt_vds_prods', []);    // danh sách tên SP hệ sale
+
+/* ============================================================
+   DANH MỤC CHUẨN — Sheet MasterData-NemThanh, tab DM_SanPham
+   Cột: A STT · B Mã · C Tên (MISA) · D Tính chất · E ĐVT · F Tên sản phẩm
+   - Cột F (không dấu) là tên DÙNG ĐỂ GỬI sang hệ vận đơn sale.
+     Dữ liệu thật của van-don-sale chạy bằng tên không dấu, sai dấu là lệch khớp.
+   - Cột C (có dấu) chỉ dùng để IN lên phiếu cho khách nhìn.
+   Đọc bằng gviz + JSONP nên không dính CORS. Sheet phải để
+   Chia sẻ > Bất kỳ ai có đường liên kết > Người xem.
+   ============================================================ */
+var MD_ID  = '1koko05SHlVy9f2qqhFNqvu6NeD-U8ktvU1UFd0ci0sQ';
+var MD_TAB = 'DM_SanPham';
+var MDSP   = ld('hdnt_md_sp', []);   // [{ma, ten (cột F), tenIn (cột C), dvt}]
+
+var _mdDem = 0;
+function mdTai(cb){
+  var ten = 'mdcb' + (++_mdDem) + '_' + Date.now().toString(36);
+  var s = document.createElement('script');
+  var xong = false;
+  function donDep(){
+    try{ delete window[ten]; }catch(e){ window[ten] = undefined; }
+    if(s && s.parentNode) s.parentNode.removeChild(s);
+  }
+  function tra(kq){ if(xong) return; xong = true; donDep(); if(cb) cb(kq); }
+  window[ten] = function(d){ tra(mdPhanTich(d)); };
+  s.onerror = function(){ tra(null); };
+  s.src = 'https://docs.google.com/spreadsheets/d/' + MD_ID + '/gviz/tq'
+        + '?tqx=responseHandler:' + ten
+        + '&headers=1&sheet=' + encodeURIComponent(MD_TAB);
+  document.body.appendChild(s);
+  setTimeout(function(){ tra(null); }, 15000);
+}
+function mdPhanTich(d){
+  var rows = (d && d.table && d.table.rows) || [];
+  var ds = [], da = {};
+  rows.forEach(function(r){
+    var c = r.c || [];
+    function o(i){ return (c[i] && c[i].v != null) ? String(c[i].v).trim() : ''; }
+    var tenGui = o(5);            // cột F
+    var tenIn  = o(2);            // cột C
+    if(!tenGui) tenGui = tenIn;   // 19 dòng bánh trung thu chỉ có cột F, vài dòng ngược lại
+    if(!tenIn)  tenIn  = tenGui;
+    if(!tenGui) return;                                  // dòng rỗng
+    if(normKey(tenGui) === 'tensanpham') return;         // lỡ lọt dòng tiêu đề
+    var k = normKey(tenGui);
+    if(da[k]) return;                                    // trùng thì giữ dòng đầu
+    da[k] = 1;
+    ds.push({ ma:o(1), ten:tenGui, tenIn:tenIn, dvt:o(4) });
+  });
+  return ds;
+}
+/* tra 1 sản phẩm trong danh mục chuẩn, khớp cả tên không dấu lẫn tên có dấu */
+function mdTheoTen(ten){
+  var k = normKey(ten);
+  if(!k) return null;
+  for(var i=0;i<MDSP.length;i++){
+    if(normKey(MDSP[i].ten)===k || normKey(MDSP[i].tenIn)===k) return MDSP[i];
+  }
+  return null;
+}
+function mdTenIn(ten){ var x=mdTheoTen(ten); return (x && x.tenIn) || ten; }
+
+/* Hợp nhất vào danh mục màn Lập đơn: CHỈ THÊM sản phẩm chưa có.
+   Không sửa mã, không đụng giá, không xóa gì của tab Data. */
+function mdGhepVaoCat(){
+  if(!MDSP.length) return 0;
+  var co = {};
+  CAT.forEach(function(c){ co[normKey(c.ten)] = c; });
+  var them = 0;
+  MDSP.forEach(function(x){
+    var cu = co[normKey(x.ten)] || co[normKey(x.tenIn)];
+    if(cu){
+      if(!cu.dvt && x.dvt) cu.dvt = x.dvt;   // bù ĐVT còn thiếu, không đổi tên/giá
+      return;
+    }
+    CAT.push({ ma: x.ma || ('MD'+normKey(x.ten).slice(0,12)),
+               ten: x.tenIn || x.ten, dvt: x.dvt, gia: 0, tuMD: true });
+    co[normKey(x.tenIn || x.ten)] = 1;
+    them++;
+  });
+  if(them) sv('hdnt_cat', CAT);
+  return them;
+}
+/* nạp danh mục chuẩn rồi áp vào cả 2 màn */
+function mdNap(baoLoi, cb){
+  mdTai(function(ds){
+    if(!ds || !ds.length){
+      if(baoLoi) toast('Không đọc được MasterData — kiểm tra quyền chia sẻ Sheet');
+      if(cb) cb(false);
+      return;
+    }
+    MDSP = ds;
+    sv('hdnt_md_sp', MDSP);
+    var them = mdGhepVaoCat();
+    if(baoLoi) toast('Danh mục chuẩn: '+MDSP.length+' SP'+(them?' · thêm '+them+' SP mới vào màn Lập đơn':''));
+    veCatTable(); veLines(); stVeLines();
+    if(cb) cb(true);
+  });
+}
 var ST = { ch:'', loai:'order', hen:'', ck:0, vat:0, lines:[] };
 
 /* --- phần trăm cho phép số lẻ (num() cắt mất dấu chấm) --- */
@@ -1514,8 +1613,10 @@ function stNhoGia(ch,ds){
   ds.forEach(function(l){ if(l.ten && num(l.gia)>0) m[stKeyGia(ch,l.ten)]=num(l.gia); });
   sv('hdnt_st_gia',m);
 }
-/* --- đơn vị tính: dò trong danh mục sản phẩm của mình theo tên bỏ dấu --- */
+/* --- đơn vị tính: ưu tiên MasterData cột E, không có thì dò danh mục cũ --- */
 function stDvt(ten){
+  var x=mdTheoTen(ten);
+  if(x && x.dvt) return x.dvt;
   var k=normKey(ten);
   for(var i=0;i<CAT.length;i++){ if(normKey(CAT[i].ten)===k) return CAT[i].dvt||''; }
   return '';
@@ -1591,6 +1692,8 @@ function taiVds(baoLoi){
 
 /* --- danh sách SP dùng cho tab siêu thị: ưu tiên danh mục hệ sale --- */
 function stDsSP(){
+  // ưu tiên danh mục chuẩn MasterData (cột F, khớp hệ vận đơn sale)
+  if(MDSP.length) return MDSP.map(function(x){ return x.ten; });
   if(PRODS.length) return PRODS;
   return CAT.map(function(c){ return c.ten; });
 }
@@ -1637,7 +1740,8 @@ function stVeLines(){
     h+='<div class="prow" data-st="'+i+'">'+
        '<div class="g3">'+
          '<select data-sf="ten"><option value="">— chọn SP —</option>'+
-           ds.map(function(t){ return '<option'+(t===l.ten?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+
+           // hiện tên CÓ DẤU cho sale dễ đọc, nhưng value là tên cột F để gửi đi
+           ds.map(function(t){ return '<option value="'+esc(t)+'"'+(t===l.ten?' selected':'')+'>'+esc(mdTenIn(t))+'</option>'; }).join('')+
          '</select>'+
          '<input data-sf="sl" inputmode="numeric" value="'+esc(l.sl)+'" placeholder="SL">'+
          '<input data-sf="note" value="'+esc(l.note||'')+'" placeholder="Ghi chú dòng">'+
@@ -1715,9 +1819,11 @@ function stDungPhieu(d, tenCH, nvGiao, daGui){
     ch: tenCH, nv: nvGiao||'', sale: d.sale, coso: COSO,
     loai: ST.loai, hen: d.hen, ghichu: d.ghiChu,
     daGui: !!daGui,
-    sps: d.sps.map(function(s){ return s.ten+' ×'+num(s.sl); }).join(' · '),
+    sps: d.sps.map(function(s){ return mdTenIn(s.ten)+' ×'+num(s.sl); }).join(' · '),
     lines: d.sps.map(function(s){
-      return { ten:String(s.ten).trim(), dvt:stDvt(s.ten), sl:num(s.sl),
+      var t = String(s.ten).trim();
+      // ten  = cột F, đã gửi sang hệ sale · tenIn = cột C có dấu, dùng để in phiếu
+      return { ten:t, tenIn:mdTenIn(t), dvt:stDvt(t), sl:num(s.sl),
                gia:num(s.gia), tt:stTienDong(s), note:s.note||'' };
     }),
     tongHang: d.tinh.tongHang, ckPct: pct(ST.ck), ck: d.tinh.ckTien,
@@ -1817,7 +1923,9 @@ function vePhieuST(d){
   donHienTai=d;
   var tenLoai={order:'Đơn thường',gap:'Gấp',hen:'Hẹn giờ',thu_no:'Thu nợ'}[d.loai]||d.loai||'';
   var ln=(d.lines||[]).map(function(l){
-    return '<tr><td>'+esc(l.ten)+(l.dvt?'<br><span class="mu">'+esc(l.dvt)+'</span>':'')+
+    // in tên có dấu cho khách; phiếu cũ chưa có tenIn thì tra lại từ danh mục chuẩn
+    var tenHien = l.tenIn || mdTenIn(l.ten);
+    return '<tr><td>'+esc(tenHien)+(l.dvt?'<br><span class="mu">'+esc(l.dvt)+'</span>':'')+
       (l.note?'<br><span class="mu">'+esc(l.note)+'</span>':'')+'</td>'+
       '<td class="r">'+fmt(l.sl)+'</td><td class="r">'+fmt(l.gia)+'</td><td class="r">'+fmt(l.tt)+'</td></tr>';
   }).join('');
@@ -2126,6 +2234,7 @@ function init(){
   chVeTatCa();
   veKhoChaoList();
   taiVds(false);
+  mdNap(false);      // danh mục chuẩn MasterData — im lặng, hỏng thì dùng nguồn cũ
 
   taiDanhMuc();
 
