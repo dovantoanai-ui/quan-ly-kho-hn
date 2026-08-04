@@ -55,6 +55,8 @@ input:focus,select:focus{outline:2px solid var(--xl2);outline-offset:-1px}
 .prow{border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;background:#fbfcfb}
 .prow .hint{font-size:11.5px;color:var(--mu);margin-top:6px}
 .prow .hint b{color:var(--tx)}
+.grow{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+.tt-o{background:#f4f6f4;color:var(--mu);text-align:right;font-weight:600}
 .del{background:none;border:0;color:var(--do);font-size:12px;padding:5px 0 0;font-weight:600;font-family:inherit}
 
 .tot{background:#f0f7f2;border:1px solid #cfe6d8;border-radius:11px;padding:11px}
@@ -139,6 +141,9 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
 .inv-sum .l.tt{font-size:15.5px;font-weight:700;color:var(--xl);border-top:1px solid var(--line);margin-top:5px;padding-top:7px}
 .inv-sum .l.no b{color:var(--do)}
 .inv-thanks{text-align:center;font-size:11px;color:var(--xl);font-style:italic;margin-top:12px}
+.inv-sign{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;text-align:center}
+.inv-sign div{font-size:10.5px;color:var(--mu)}
+.inv-sign b{display:block;font-size:11.5px;color:var(--tx);margin-bottom:42px}
 </style>
 </head>
 <body>
@@ -323,6 +328,10 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
   <div class="pg" id="p6">
     <h2>Phiếu bán hàng gửi khách</h2>
     <div class="note">Phiếu này để <b>lưu ảnh gửi Zalo</b> hoặc <b>xuất PDF</b>. Không phải hóa đơn đỏ (VAT) — khách cần hóa đơn đỏ thì vẫn xuất trên hệ thống hóa đơn điện tử.</div>
+    <div class="pills" id="khoPills">
+      <div class="pill" data-act="khoPhieu" data-v="a4">Khổ A4</div>
+      <div class="pill on" data-act="khoPhieu" data-v="a5">Khổ A5</div>
+    </div>
     <div id="invWrap"></div>
     <div class="rowbtn" style="margin-top:12px">
       <button class="btn" data-act="luuAnh">Lưu ảnh PNG</button>
@@ -341,7 +350,7 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
     </div>
 
     <div id="stKhoiDon">
-    <div class="note">Đơn ở màn này <b>không</b> vào sổ hóa đơn bán lẻ. Đơn đẩy thẳng sang hệ vận đơn sale (tab <b>Don_phat_sinh</b>), backend tự gán NV giao theo cửa hàng.</div>
+    <div class="note">Đơn ở màn này <b>không</b> vào sổ hóa đơn bán lẻ. Đơn đẩy thẳng sang hệ vận đơn sale (tab <b>Don_phat_sinh</b>), backend tự gán NV giao theo cửa hàng. Giá nhập ở đây <b>chỉ dùng để in phiếu</b>, không gửi sang hệ sale, không vào doanh thu.</div>
 
     <div class="card">
       <label>Cửa hàng / siêu thị</label>
@@ -371,9 +380,17 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
     </div>
 
     <div class="card">
+      <label>Chiết khấu &amp; thuế (để trống thì không in lên phiếu)</label>
+      <div class="g2">
+        <div><label>Chiết khấu %</label><input id="stCk" inputmode="decimal" placeholder="0"></div>
+        <div><label>VAT %</label><input id="stVat" inputmode="decimal" placeholder="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="mb"><label>Ghi chú chung cho NV giao</label><input id="stGhiChu" placeholder="Giao trước 10h, gọi trước khi đến"></div>
       <div class="tot mb" style="padding:10px 11px" id="stTomTat"></div>
-      <button class="btn" data-act="stGui">Gửi đơn sang vận đơn sale</button>
+      <button class="btn" data-act="stGui">Gửi đơn + tạo phiếu</button>
       <button class="btn ghost" data-act="stTaiDM" style="margin-top:9px">Tải lại danh sách CH + sản phẩm</button>
     </div>
 
@@ -522,6 +539,7 @@ function datNv(id, ten){
 
 var lines = [];            // dòng sản phẩm đang nhập
 var donHienTai = null;     // đơn đang xem phiếu
+var KHO_PHIEU = ld('hdnt_kho_phieu','a5');   // khổ giấy xuất PDF: a4 | a5
 var locDon='today', locKho='all', locBC='today';
 
 /* ---------- localStorage đơn theo ngày ---------- */
@@ -1180,12 +1198,18 @@ function xuatPdf(){
   anhPhieu(function(canvas){
     var J=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
     if(!J){ toast('Chưa tải được thư viện PDF'); return; }
-    var pdf=new J({unit:'pt',format:'a4'});
-    var w=pdf.internal.pageSize.getWidth()-56;
+    var kho = (KHO_PHIEU==='a4') ? 'a4' : 'a5';
+    var le  = (kho==='a4') ? 28 : 20;
+    var pdf=new J({unit:'pt',format:kho});
+    var w=pdf.internal.pageSize.getWidth()-le*2;
     var h=canvas.height*w/canvas.width;
-    pdf.addImage(canvas.toDataURL('image/png'),'PNG',28,28,w,h);
+    // phiếu dài hơn 1 trang thì thu theo chiều cao cho gọn 1 tờ
+    var hMax=pdf.internal.pageSize.getHeight()-le*2;
+    if(h>hMax){ w=w*hMax/h; h=hMax; }
+    var x=(pdf.internal.pageSize.getWidth()-w)/2;
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',x,le,w,h);
     pdf.save('Phieu-'+(donHienTai?donHienTai.id:'ban-hang')+'.pdf');
-    toast('Đã xuất PDF');
+    toast('Đã xuất PDF khổ '+kho.toUpperCase());
   });
 }
 function chiaSe(){
@@ -1338,6 +1362,8 @@ document.addEventListener('click', function(ev){
     stVeTomTat();
   }
   else if(act==='stGui') stGui();
+  else if(act==='stPhieu') stMoPhieu(id);
+  else if(act==='khoPhieu'){ KHO_PHIEU=v; sv('hdnt_kho_phieu',v); danhDauPill(el); }
   else if(act==='stTaiDM'){ toast('Đang tải danh sách...'); taiVds(true); }
   else if(act==='stTab'){ danhDauPill(el); stDoiTab(v); }
   else if(act==='chChon') chChonCH(v);
@@ -1370,7 +1396,9 @@ document.addEventListener('input', function(ev){
   if(srow){
     var si=num(srow.getAttribute('data-st')), sf=t.getAttribute('data-sf');
     if(sf==='sl') ST.lines[si].sl=num(t.value);
+    else if(sf==='gia'){ ST.lines[si].gia=num(t.value); ST.lines[si].giaTu=''; }
     else if(sf==='note') ST.lines[si].note=t.value;
+    stCapNhatDong(srow,si);
     stVeTomTat();
     return;
   }
@@ -1384,6 +1412,8 @@ document.addEventListener('input', function(ev){
   if(t.id==='chTim') chVeGoiY();
   else if(t.id==='stTim') stVeGoiY();
   else if(t.id==='stHen'){ ST.hen=t.value; stVeTomTat(); }
+  else if(t.id==='stCk'){ ST.ck=pct(t.value); stVeTomTat(); }
+  else if(t.id==='stVat'){ ST.vat=pct(t.value); stVeTomTat(); }
   else if(t.id==='fShip'||t.id==='fDaTra') veTong();
   else if(t.id==='fTimKH') veKhTable();
   else if(t.id==='fTimSP') veCatTable();
@@ -1409,9 +1439,16 @@ document.addEventListener('change', function(ev){
   var srow2=t.closest ? t.closest('[data-st]') : null;
   if(srow2){
     var sj=num(srow2.getAttribute('data-st')), sf2=t.getAttribute('data-sf');
-    if(sf2==='ten') ST.lines[sj].ten=t.value;
+    if(sf2==='ten'){
+      ST.lines[sj].ten=t.value;
+      stDongLaiGia(ST.lines[sj]);
+      var oGia=srow2.querySelector('[data-sf="gia"]');
+      if(oGia) oGia.value = num(ST.lines[sj].gia) ? fmt(ST.lines[sj].gia) : '';
+    }
     else if(sf2==='sl') ST.lines[sj].sl=num(t.value);
+    else if(sf2==='gia'){ ST.lines[sj].gia=num(t.value); ST.lines[sj].giaTu=''; }
     else if(sf2==='note') ST.lines[sj].note=t.value;
+    stCapNhatDong(srow2,sj);
     stVeTomTat();
     return;
   }
@@ -1448,7 +1485,53 @@ function vdsUrl(){ return ld('hdnt_vds_url','') || VDS_MACDINH; }
 
 var STORES = ld('hdnt_vds_stores', []);   // danh sách tên CH
 var PRODS  = ld('hdnt_vds_prods', []);    // danh sách tên SP hệ sale
-var ST = { ch:'', loai:'order', hen:'', lines:[] };
+var ST = { ch:'', loai:'order', hen:'', ck:0, vat:0, lines:[] };
+
+/* --- phần trăm cho phép số lẻ (num() cắt mất dấu chấm) --- */
+function pct(v){
+  var s=String(v==null?'':v).replace(/,/g,'.').replace(/[^\d.]/g,'');
+  var x=parseFloat(s);
+  return isNaN(x)?0:x;
+}
+/* --- bộ nhớ giá siêu thị trên máy: khóa = cửa hàng + sản phẩm --- */
+function stKeyGia(ch,ten){ return normKey(ch)+'|'+normKey(ten); }
+function stGiaNho(ch,ten){
+  if(!ch || !ten) return 0;
+  var m=ld('hdnt_st_gia',{});
+  return num(m[stKeyGia(ch,ten)]);
+}
+function stNhoGia(ch,ds){
+  if(!ch) return;
+  var m=ld('hdnt_st_gia',{});
+  ds.forEach(function(l){ if(l.ten && num(l.gia)>0) m[stKeyGia(ch,l.ten)]=num(l.gia); });
+  sv('hdnt_st_gia',m);
+}
+/* --- đơn vị tính: dò trong danh mục sản phẩm của mình theo tên bỏ dấu --- */
+function stDvt(ten){
+  var k=normKey(ten);
+  for(var i=0;i<CAT.length;i++){ if(normKey(CAT[i].ten)===k) return CAT[i].dvt||''; }
+  return '';
+}
+function stTienDong(l){ return num(l.sl)*num(l.gia); }
+/* Giá tự điền phải bám theo đúng cặp cửa hàng + sản phẩm hiện tại.
+   Đổi cửa hàng hoặc đổi SP thì giá tự điền cũ bị bỏ, lấy lại giá đúng.
+   Giá sale gõ tay (giaTu rỗng) thì giữ nguyên, không đụng vào. */
+function stDongLaiGia(l){
+  var key=stKeyGia(ST.ch,l.ten);
+  if(l.giaTu && l.giaTu!==key){ l.gia=0; l.giaTu=''; }
+  if(!num(l.gia)){
+    var g=stGiaNho(ST.ch,l.ten);
+    if(g){ l.gia=g; l.giaTu=key; }
+  }
+}
+/* --- tính tiền: CK trừ trên tổng hàng, VAT tính sau CK --- */
+function stTinhTien(){
+  var tongHang=0;
+  ST.lines.forEach(function(l){ if(l.ten && num(l.sl)>0) tongHang+=stTienDong(l); });
+  var ckTien=Math.round(tongHang*pct(ST.ck)/100);
+  var vatTien=Math.round((tongHang-ckTien)*pct(ST.vat)/100);
+  return { tongHang:tongHang, ckTien:ckTien, vatTien:vatTien, tong:tongHang-ckTien+vatTien };
+}
 
 function tenChuoi(x){
   if(typeof x==='string') return x;
@@ -1507,41 +1590,84 @@ function stVeGoiY(){
 function stChonCH(ten){
   ST.ch=ten;
   $('stTim').value=ten;
-  stVeGoiY(); stVeTomTat();
+  stVeGoiY();
   $('stDaChon').textContent=ten;
+  stVeLines();   // vẽ lại để lấy giá đã nhớ của cửa hàng này
 }
 
 /* --- dòng sản phẩm --- */
-function stThemDong(){ ST.lines.push({ten:'',sl:1,note:''}); stVeLines(); }
+function stThemDong(){ ST.lines.push({ten:'',sl:1,gia:0,note:''}); stVeLines(); }
+function stHintDong(l){
+  var nho=stGiaNho(ST.ch,l.ten);
+  if(!l.ten) return 'Chọn sản phẩm rồi nhập đơn giá';
+  var dv=stDvt(l.ten);
+  var s=(dv?'ĐVT '+esc(dv)+' · ':'');
+  if(nho) return s+'Giá lần trước cho CH này: <b>'+fmt(nho)+'</b> · sửa đè được';
+  return s+'Chưa có giá cũ cho cửa hàng này — nhập tay, app nhớ cho lần sau';
+}
 function stVeLines(){
-  if(!ST.lines.length) ST.lines.push({ten:'',sl:1,note:''});
+  if(!ST.lines.length) ST.lines.push({ten:'',sl:1,gia:0,note:''});
   var ds=stDsSP();
   var h='';
   ST.lines.forEach(function(l,i){
+    stDongLaiGia(l);
     h+='<div class="prow" data-st="'+i+'">'+
-       '<div class="g3 mb">'+
+       '<div class="g3">'+
          '<select data-sf="ten"><option value="">— chọn SP —</option>'+
            ds.map(function(t){ return '<option'+(t===l.ten?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+
          '</select>'+
          '<input data-sf="sl" inputmode="numeric" value="'+esc(l.sl)+'" placeholder="SL">'+
          '<input data-sf="note" value="'+esc(l.note||'')+'" placeholder="Ghi chú dòng">'+
        '</div>'+
+       '<div class="grow">'+
+         '<input data-sf="gia" inputmode="numeric" value="'+(num(l.gia)?fmt(l.gia):'')+'" placeholder="Đơn giá">'+
+         '<input class="tt-o" data-sf="tt" value="'+(stTienDong(l)?fmt(stTienDong(l)):'')+'" placeholder="Thành tiền" readonly>'+
+       '</div>'+
+       '<div class="hint">'+stHintDong(l)+'</div>'+
        (ST.lines.length>1?'<button class="del" data-act="stXoaDong" data-i="'+i+'">Xóa dòng</button>':'')+
        '</div>';
   });
   $('stLines').innerHTML=h;
   stVeTomTat();
 }
+/* cập nhật thành tiền + dòng gợi ý của 1 dòng, không vẽ lại cả bảng */
+function stCapNhatDong(row,i){
+  var l=ST.lines[i]; if(!l) return;
+  var o=row.querySelector('[data-sf="tt"]');
+  if(o) o.value = stTienDong(l) ? fmt(stTienDong(l)) : '';
+  var hi=row.querySelector('.hint');
+  if(hi) hi.innerHTML = stHintDong(l);
+}
 function stVeTomTat(){
   var ok=ST.lines.filter(function(l){ return l.ten && num(l.sl)>0; });
   var tongSL=0; ok.forEach(function(l){ tongSL+=num(l.sl); });
   var ten={order:'Đơn thường',gap:'Gấp',hen:'Hẹn giờ',thu_no:'Thu nợ'}[ST.loai]||ST.loai;
+  var t=stTinhTien();
   $('stTomTat').innerHTML=
     '<div class="l"><span>Cửa hàng</span><b>'+esc(ST.ch||'— chưa chọn —')+'</b></div>'+
     '<div class="l"><span>Loại đơn</span><b>'+ten+(ST.loai==='hen'&&ST.hen?' · '+esc(ST.hen):'')+'</b></div>'+
     '<div class="l"><span>Số dòng SP</span><b>'+ok.length+' dòng · '+fmt(tongSL)+' gói</b></div>'+
-    '<div class="l big"><span>Gửi cho</span><span style="font-size:14px">NV giao của CH</span></div>';
+    '<div class="l"><span>Tổng hàng</span><b>'+fmt(t.tongHang)+'</b></div>'+
+    (t.ckTien?'<div class="l"><span>Chiết khấu '+pct(ST.ck)+'%</span><b>−'+fmt(t.ckTien)+'</b></div>':'')+
+    (t.vatTien?'<div class="l"><span>VAT '+pct(ST.vat)+'%</span><b>'+fmt(t.vatTien)+'</b></div>':'')+
+    '<div class="l big"><span>Tổng thanh toán</span><b>'+fmt(t.tong)+'</b></div>';
   $('stSale').textContent = ld('hdnt_nv','') || '—';
+}
+
+/* --- mã phiếu siêu thị: ST + ddMM + STT trong ngày --- */
+function stTaoMa(){
+  var d=new Date();
+  var tien='ST'+pad(d.getDate())+pad(d.getMonth()+1);
+  var da={};
+  ld('hdnt_st_history',[]).forEach(function(x){ if(String(x.id||'').indexOf(tien)===0) da[x.id]=1; });
+  // phiếu này chỉ lưu trên máy, không đồng bộ Sheet -> để mã sạch cho dễ đọc trên giấy.
+  // chỉ khi trùng mã ngay trên máy này mới gắn thêm hậu tố.
+  var stt=Object.keys(da).length+1;
+  for(var i=0;i<50;i++){
+    var ma=tien+'-'+pad(stt+i);
+    if(!da[ma]) return ma;
+  }
+  return maKhongTrung(tien, stt, da);
 }
 
 /* --- gửi đơn --- */
@@ -1554,6 +1680,8 @@ function stGui(){
   var ghiChu=$('stGhiChu').value.trim();
   var hen = ST.loai==='hen' ? $('stHen').value.trim() : '';
   var gio = new Date().toLocaleString('vi-VN');
+  var tinh = stTinhTien();
+  var maPhieu = stTaoMa();
 
   // 16 cột — giữ đúng thứ tự app vandon-sale đang gửi
   var rows=sps.map(function(s){
@@ -1566,23 +1694,36 @@ function stGui(){
   var btn=document.querySelector('[data-act="stGui"]');
   if(btn){ btn.disabled=true; btn.textContent='Đang gửi...'; }
   vdsPost({loai:'vandon_ngay', nv:'', sale:sale, rows:rows}).then(function(d){
-    if(btn){ btn.disabled=false; btn.textContent='Gửi đơn sang vận đơn sale'; }
+    if(btn){ btn.disabled=false; btn.textContent='Gửi đơn + tạo phiếu'; }
     if(!d || !d.ok){ toast('Lỗi: '+((d&&(d.msg||d.error))||'không rõ')); return; }
     var spTxt = d.spList || sps.map(function(s){ return s.ten+' ×'+num(s.sl); }).join(' · ');
-    toast('Đã gửi: '+spTxt+' cho NV '+(d.nv||'(tự gán)'));
+    toast('Đã gửi '+maPhieu+' cho NV '+(d.nv||'(tự gán)'));
+    stNhoGia(ST.ch, sps);
+    var phieu = {
+      id: maPhieu, gio: gio, ngay: homNay(),
+      ch: d.tenCH||ST.ch, nv: d.nv||'', sale: sale, coso: COSO,
+      loai: ST.loai, hen: hen, ghichu: ghiChu, sps: spTxt,
+      lines: sps.map(function(s){
+        return { ten:String(s.ten).trim(), dvt:stDvt(s.ten), sl:num(s.sl),
+                 gia:num(s.gia), tt:stTienDong(s), note:s.note||'' };
+      }),
+      tongHang: tinh.tongHang, ckPct: pct(ST.ck), ck: tinh.ckTien,
+      vatPct: pct(ST.vat), vat: tinh.vatTien, tong: tinh.tong
+    };
     var hist=ld('hdnt_st_history',[]);
-    hist.unshift({ gio:gio, ngay:homNay(), ch:d.tenCH||ST.ch, nv:d.nv||'',
-                   sps:spTxt, loai:ST.loai, hen:hen, ghichu:ghiChu });
+    hist.unshift(phieu);
     sv('hdnt_st_history',hist.slice(0,30));
     stReset(); stVeLichSu();
+    vePhieuST(phieu); go(6);
   }).catch(function(){
-    if(btn){ btn.disabled=false; btn.textContent='Gửi đơn sang vận đơn sale'; }
+    if(btn){ btn.disabled=false; btn.textContent='Gửi đơn + tạo phiếu'; }
     toast('Lỗi kết nối tới hệ vận đơn sale');
   });
 }
 function stReset(){
-  ST={ ch:'', loai:'order', hen:'', lines:[] };
+  ST={ ch:'', loai:'order', hen:'', ck:0, vat:0, lines:[] };
   $('stTim').value=''; $('stGhiChu').value=''; $('stHen').value='';
+  $('stCk').value=''; $('stVat').value='';
   $('stDaChon').textContent='— chưa chọn —';
   $('stHenWrap').style.display='none';
   var ps=$('stLoaiPills').querySelectorAll('.pill');
@@ -1596,13 +1737,64 @@ function stVeLichSu(){
   $('stLichSu').innerHTML=hist.map(function(x){
     return '<div class="don xuat"><div class="h"><div>'+
       '<div class="kh">'+esc(x.ch)+'</div>'+
-      '<div class="meta">'+esc(x.gio)+' · gửi NV '+esc(x.nv||'(tự gán)')+' · '+(ten[x.loai]||x.loai)+
+      '<div class="meta">'+esc(x.gio)+(x.id?' · phiếu '+esc(x.id):'')+' · gửi NV '+esc(x.nv||'(tự gán)')+' · '+(ten[x.loai]||x.loai)+
       (x.hen?' · '+esc(x.hen):'')+'</div></div>'+
       '<span class="tag t-xuat">Đã gửi</span></div>'+
-      '<div class="sp">'+esc(x.sps)+'</div>'+
+      '<div class="sp">'+esc(x.sps)+(num(x.tong)?' — <b>'+fmt(x.tong)+' đ</b>':'')+'</div>'+
       (x.ghichu?'<div class="mu" style="margin-top:6px">Ghi chú: '+esc(x.ghichu)+'</div>':'')+
+      (x.lines&&x.lines.length?'<button class="del" style="color:var(--cam)" data-act="stPhieu" data-id="'+esc(x.id)+'">Mở phiếu / In lại</button>':'')+
       '</div>';
   }).join('');
+}
+/* mở lại phiếu cũ từ lịch sử trên máy */
+function stMoPhieu(id){
+  var hist=ld('hdnt_st_history',[]);
+  for(var i=0;i<hist.length;i++){
+    if(String(hist[i].id)===String(id)){ vePhieuST(hist[i]); go(6); return; }
+  }
+  toast('Không tìm thấy phiếu trên máy này');
+}
+
+/* ---------- phiếu bán hàng cho đơn siêu thị ---------- */
+function vePhieuST(d){
+  if(!d){ $('invWrap').innerHTML='<div class="empty">Chưa có phiếu siêu thị nào.</div>'; return; }
+  donHienTai=d;
+  var tenLoai={order:'Đơn thường',gap:'Gấp',hen:'Hẹn giờ',thu_no:'Thu nợ'}[d.loai]||d.loai||'';
+  var ln=(d.lines||[]).map(function(l){
+    return '<tr><td>'+esc(l.ten)+(l.dvt?'<br><span class="mu">'+esc(l.dvt)+'</span>':'')+
+      (l.note?'<br><span class="mu">'+esc(l.note)+'</span>':'')+'</td>'+
+      '<td class="r">'+fmt(l.sl)+'</td><td class="r">'+fmt(l.gia)+'</td><td class="r">'+fmt(l.tt)+'</td></tr>';
+  }).join('');
+  $('invWrap').innerHTML=
+   '<div class="inv" id="invPaper">'+
+    '<div class="inv-head">'+
+      (LOGO.indexOf('data:')===0?'<img class="inv-logo" src="'+LOGO+'" alt="NemThanh">':'')+
+      '<div class="inv-ln co">'+esc(CFG.cty)+'</div>'+
+      '<div class="inv-ln">'+esc(CFG.diachi)+'</div>'+
+      '<div class="inv-ln">MST: '+esc(CFG.mst)+' · '+esc(CFG.email)+'</div>'+
+      '<div class="inv-ln">Hotline: '+esc(CFG.hotline)+'</div>'+
+    '</div>'+
+    '<div class="inv-title">PHIẾU BÁN HÀNG</div>'+
+    '<div class="inv-sub">Số '+esc(d.id)+' · Ngày '+ngayVN(d.ngay)+'</div>'+
+    '<div class="inv-kh">'+
+      '<div><span>Cửa hàng</span><b>'+esc(d.ch)+'</b></div>'+
+      '<div><span>Loại đơn</span><b>'+esc(tenLoai)+(d.hen?' · '+esc(d.hen):'')+'</b></div>'+
+      '<div><span>NV bán hàng</span><b>'+esc(d.sale||d.nv||'')+' · Cơ sở '+esc(d.coso||'')+'</b></div>'+
+      (d.ghichu?'<div><span>Ghi chú</span><b>'+esc(d.ghichu)+'</b></div>':'')+
+    '</div>'+
+    '<table class="inv-tb"><tr><th>Sản phẩm</th><th class="r">SL</th><th class="r">Đơn giá</th><th class="r">Thành tiền</th></tr>'+ln+'</table>'+
+    '<div class="inv-sum">'+
+      '<div class="l"><span>Tổng hàng</span><b>'+fmt(d.tongHang)+'</b></div>'+
+      (num(d.ck)?'<div class="l"><span>Chiết khấu '+(d.ckPct||0)+'%</span><b>−'+fmt(d.ck)+'</b></div>':'')+
+      (num(d.vat)?'<div class="l"><span>VAT '+(d.vatPct||0)+'%</span><b>'+fmt(d.vat)+'</b></div>':'')+
+      '<div class="l tt"><span>Tổng thanh toán</span><b>'+fmt(d.tong)+'</b></div>'+
+    '</div>'+
+    '<div class="inv-sign">'+
+      '<div><b>Người giao hàng</b>(ký, ghi rõ họ tên)</div>'+
+      '<div><b>Người nhận hàng</b>(ký, ghi rõ họ tên)</div>'+
+    '</div>'+
+    '<div class="inv-thanks">Cảm ơn quý cửa hàng đã tin dùng đặc sản Nem Thanh</div>'+
+   '</div>';
 }
 function stVeTatCa(){ stVeGoiY(); stVeLines(); stVeLichSu(); stVeTomTat(); }
 
@@ -1869,6 +2061,9 @@ function init(){
   veNavBadge();
   veDsInfo();
   vePhieu(null);
+  // khôi phục khổ giấy đã chọn lần trước
+  var kps=$('khoPills').querySelectorAll('.pill');
+  for(var k=0;k<kps.length;k++) kps[k].classList.toggle('on', kps[k].getAttribute('data-v')===KHO_PHIEU);
   $('cVds').value=ld('hdnt_vds_url','');
   veLinkInfo();
   stVeTatCa();
