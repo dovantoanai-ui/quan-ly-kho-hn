@@ -2437,6 +2437,49 @@ function hdNorm(s){
 }
 function hdChoKho(s){ var k=hdNorm(s); return !k || k==='chokho'; }
 
+/* ---- QUY DOI GOI -> CAI (Toan chot 03/08/2026) -------------------------
+   Kho Ha Noi dem nem nuong bang CAI, nhung don tren sheet van-don-sale ghi
+   bang GOI (1 goi = 2 cai). Truoc day so goi duoc ghi THANG vao phieu kho
+   -> phieu kho thieu mot nua ma khong ai thay.
+
+   Quy doi dat o DUNG 1 CHO: hdGomDon / hdGomChao, ngay luc doc don ve.
+   Moi thu phia sau (hien thi, phieu kho, don le) deu nhan so DA la cai.
+
+   CHONG NHAN HAI LAN: chi doi khi dvt CHUA phai "cai". Sau nay sheet doi
+   sang ghi cai thi app tu bo qua, khong phai sua code.
+
+   Them SP moi: them 1 dong vao bang duoi (key da bo dau, khong khoang trang
+   - dung ham hdNorm). Toan chot xu ly nem nuong TRUOC; cac SP khac (nem chua...)
+   kho van dem bang goi nhu don -> KHONG dua vao day. */
+var KHO_QUY_DOI = { 'nemnuong': 2 };   // ten (hdNorm) -> so cai / 1 goi
+
+// Don vi tinh nao duoc coi la "da la cai roi" -> khong nhan nua
+function khoLaCai(dvt){
+  var k = hdNorm(dvt);
+  return k === 'cai' || k === 'chiec';
+}
+
+// Tra he so quy doi cho 1 ten SP. Khong co trong bang -> 1 (giu nguyen).
+function khoHeSo(ten){
+  var k = hdNorm(ten);
+  if (KHO_QUY_DOI.hasOwnProperty(k)) return KHO_QUY_DOI[k];
+  for (var t in KHO_QUY_DOI) {
+    if (KHO_QUY_DOI.hasOwnProperty(t) && k.indexOf(t) === 0) return KHO_QUY_DOI[t];
+  }
+  return 1;
+}
+
+// Doi 1 dong san pham cua don sang CAI.
+// Tra { qty, dvt, qtyGoc, dvtGoc, daDoi } - giu so goc de NV doi chieu don giay.
+function khoQuyDoi(ten, sl, dvt){
+  var so = Number(sl) || 0;
+  var he = khoHeSo(ten);
+  if (he <= 1 || khoLaCai(dvt)) {
+    return { qty: so, dvt: dvt || '', qtyGoc: so, dvtGoc: dvt || '', daDoi: false };
+  }
+  return { qty: so * he, dvt: 'cai', qtyGoc: so, dvtGoc: dvt || 'goi', daDoi: true };
+}
+
 /* ---- NGUON TEN DUY NHAT: tab DanhMucSanPham (sheet van-don-sale) ----
    App keo ?loai=products_list ve, moi ten SP thuc te (kho / hoa don / nhap tay)
    deu quy ve ten trong danh muc:
@@ -2610,7 +2653,11 @@ function hdGomDon(rows){
     if(!r.id)return;
     if(!map[r.id]) map[r.id]={id:r.id,ngay:r.ngay,coso:r.coso,khach:r.khach,sdt:r.sdt,
                               addr:r.diachi,nv:r.nv,ghichu:r.ghichu,tt:r.tt,sps:[]};
-    if(r.sp) map[r.id].sps.push({name:r.sp,dvt:r.dvt,qty:Number(r.sl)||0,loai:r.loai||''});
+    // Quy doi goi -> cai ngay tai day (xem khoQuyDoi). Phia sau chi lam viec voi CAI.
+    if(r.sp){ var q1=khoQuyDoi(r.sp, r.sl, r.dvt);
+      map[r.id].sps.push({name:r.sp,dvt:q1.dvt,qty:q1.qty,
+                          qtyGoc:q1.qtyGoc,dvtGoc:q1.dvtGoc,daDoi:q1.daDoi,
+                          loai:r.loai||''}); }
   });
   for(var k in map){
     if(!map.hasOwnProperty(k))continue;
@@ -2630,7 +2677,10 @@ function hdGomChao(rows){
     if(!r.id)return;
     if(!map[r.id]) map[r.id]={id:r.id,ngay:r.ngay,coso:r.coso,ch:r.ch,chMoi:r.chMoi,
                               nv:r.nv,ghichu:r.ghichu,tt:r.tt,sps:[]};
-    if(r.sp) map[r.id].sps.push({name:r.sp,dvt:r.dvt,qty:Number(r.sl)||0});
+    // Quy doi goi -> cai ngay tai day (xem khoQuyDoi). Phia sau chi lam viec voi CAI.
+    if(r.sp){ var q2=khoQuyDoi(r.sp, r.sl, r.dvt);
+      map[r.id].sps.push({name:r.sp,dvt:q2.dvt,qty:q2.qty,
+                          qtyGoc:q2.qtyGoc,dvtGoc:q2.dvtGoc,daDoi:q2.daDoi}); }
   });
   for(var k in map){
     if(!map.hasOwnProperty(k))continue;
@@ -2815,13 +2865,19 @@ function hdDongPhieu(kieu,d){
     a.textContent=p.name+(hdNorm(p.loai)==='thuhoi'?' (thu hoi)':(hdNorm(p.loai)==='tang'?' (tang)':''));
     var b2=document.createElement('span');
     b2.style.cssText='font-weight:600;white-space:nowrap;';
-    b2.textContent=p.qty+' '+(p.dvt||'');
+    // Dong da quy doi: hien so CAI truoc, kem so goc trong ngoac de NV doi chieu don giay
+    b2.textContent = p.daDoi
+      ? (fmt(p.qty)+' '+(p.dvt||'')+'  ('+fmt(p.qtyGoc)+' '+(p.dvtGoc||'goi')+')')
+      : (p.qty+' '+(p.dvt||''));
     ln.appendChild(a); ln.appendChild(b2);
     body.appendChild(ln);
   });
   var tg=document.createElement('div');
   tg.style.cssText='font-size:11.5px;color:var(--mu);margin-top:6px;padding-top:6px;border-top:1px dashed var(--bd);';
-  tg.textContent='Tong '+fmt(tongSL)+' goi - '+d.sps.length+' mat hang';
+  // Bo chu "goi" o dong tong: sau quy doi 1 don co the lan ca cai lan goi
+  var coDoi=d.sps.some(function(p){ return p.daDoi; });
+  tg.textContent='Tong '+fmt(tongSL)+' - '+d.sps.length+' mat hang'+
+                 (coDoi?' (nem nuong da doi ra cai)':'');
   body.appendChild(tg);
 
   if(kieu==='don' && d.addr){
