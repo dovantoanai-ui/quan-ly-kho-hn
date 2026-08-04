@@ -48,6 +48,7 @@ input:focus,select:focus{outline:2px solid var(--xl2);outline-offset:-1px}
 .btn.ghost{background:#fff;color:var(--xl);border:1.5px solid var(--xl)}
 .btn.cam{background:var(--cam)}
 .btn.do{background:#fff;color:var(--do);border:1.5px solid var(--do)}
+.btn.vien-cam{background:#fff;color:var(--cam);border:1.5px solid var(--cam)}
 .btn.sm{width:auto;padding:8px 12px;font-size:13px;border-radius:9px}
 .btn[disabled]{opacity:.45}
 .rowbtn{display:flex;gap:8px}
@@ -381,9 +382,13 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
 
     <div class="card">
       <label>Chiết khấu &amp; thuế (để trống thì không in lên phiếu)</label>
-      <div class="g2">
-        <div><label>Chiết khấu %</label><input id="stCk" inputmode="decimal" placeholder="0"></div>
-        <div><label>VAT %</label><input id="stVat" inputmode="decimal" placeholder="0"></div>
+      <div class="mb"><label>Chiết khấu %</label><input id="stCk" inputmode="decimal" placeholder="0"></div>
+      <div class="pills" style="margin-bottom:0" id="stVatPills">
+        <div class="pill" data-act="stVatBat" id="stVatNut">Tính VAT 8%</div>
+      </div>
+      <div id="stVatWrap" style="display:none;margin-top:10px">
+        <label>VAT % (sửa được nếu mặt hàng khác mức)</label>
+        <input id="stVat" inputmode="decimal" value="8">
       </div>
     </div>
 
@@ -391,6 +396,7 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
       <div class="mb"><label>Ghi chú chung cho NV giao</label><input id="stGhiChu" placeholder="Giao trước 10h, gọi trước khi đến"></div>
       <div class="tot mb" style="padding:10px 11px" id="stTomTat"></div>
       <button class="btn" data-act="stGui">Gửi đơn + tạo phiếu</button>
+      <button class="btn vien-cam" data-act="stChiPhieu" style="margin-top:9px">Chỉ tạo phiếu, không gửi đơn</button>
       <button class="btn ghost" data-act="stTaiDM" style="margin-top:9px">Tải lại danh sách CH + sản phẩm</button>
     </div>
 
@@ -1362,6 +1368,8 @@ document.addEventListener('click', function(ev){
     stVeTomTat();
   }
   else if(act==='stGui') stGui();
+  else if(act==='stChiPhieu') stChiPhieu();
+  else if(act==='stVatBat') stBatVat(!ST.vatBat);
   else if(act==='stPhieu') stMoPhieu(id);
   else if(act==='khoPhieu'){ KHO_PHIEU=v; sv('hdnt_kho_phieu',v); danhDauPill(el); }
   else if(act==='stTaiDM'){ toast('Đang tải danh sách...'); taiVds(true); }
@@ -1413,7 +1421,7 @@ document.addEventListener('input', function(ev){
   else if(t.id==='stTim') stVeGoiY();
   else if(t.id==='stHen'){ ST.hen=t.value; stVeTomTat(); }
   else if(t.id==='stCk'){ ST.ck=pct(t.value); stVeTomTat(); }
-  else if(t.id==='stVat'){ ST.vat=pct(t.value); stVeTomTat(); }
+  else if(t.id==='stVat'){ ST.vat = ST.vatBat ? pct(t.value) : 0; stVeTomTat(); }
   else if(t.id==='fShip'||t.id==='fDaTra') veTong();
   else if(t.id==='fTimKH') veKhTable();
   else if(t.id==='fTimSP') veCatTable();
@@ -1513,6 +1521,21 @@ function stDvt(ten){
   return '';
 }
 function stTienDong(l){ return num(l.sl)*num(l.gia); }
+/* --- nút tích VAT: tắt sẵn, tích một phát là 8%, vẫn sửa được mức khác --- */
+var VAT_MAC_DINH = 8;
+function stBatVat(bat){
+  ST.vatBat = !!bat;
+  var nut=$('stVatNut');
+  if(nut) nut.classList.toggle('on', ST.vatBat);
+  $('stVatWrap').style.display = ST.vatBat ? 'block' : 'none';
+  if(ST.vatBat){
+    if(!pct($('stVat').value)) $('stVat').value = String(VAT_MAC_DINH);
+    ST.vat = pct($('stVat').value);
+  } else {
+    ST.vat = 0;
+  }
+  stVeTomTat();
+}
 /* Giá tự điền phải bám theo đúng cặp cửa hàng + sản phẩm hiện tại.
    Đổi cửa hàng hoặc đổi SP thì giá tự điền cũ bị bỏ, lấy lại giá đúng.
    Giá sale gõ tay (giaTu rỗng) thì giữ nguyên, không đụng vào. */
@@ -1670,18 +1693,58 @@ function stTaoMa(){
   return maKhongTrung(tien, stt, da);
 }
 
-/* --- gửi đơn --- */
-function stGui(){
-  if(!ST.ch){ toast('Chưa chọn cửa hàng'); return; }
+/* --- đọc và kiểm dữ liệu đang nhập, dùng chung cho cả 2 nút --- */
+function stDocDon(){
+  if(!ST.ch){ toast('Chưa chọn cửa hàng'); return null; }
   var sps=ST.lines.filter(function(l){ return l.ten && String(l.ten).trim() && num(l.sl)>0; });
-  if(!sps.length){ toast('Thêm ít nhất 1 sản phẩm có tên và SL lớn hơn 0'); return; }
+  if(!sps.length){ toast('Thêm ít nhất 1 sản phẩm có tên và SL lớn hơn 0'); return null; }
   var sale=ld('hdnt_nv','');
-  if(!sale){ toast('Chưa đặt tên nhân viên — vào Cài đặt điền tên'); return; }
-  var ghiChu=$('stGhiChu').value.trim();
-  var hen = ST.loai==='hen' ? $('stHen').value.trim() : '';
-  var gio = new Date().toLocaleString('vi-VN');
-  var tinh = stTinhTien();
-  var maPhieu = stTaoMa();
+  if(!sale){ toast('Chưa đặt tên nhân viên — vào Cài đặt điền tên'); return null; }
+  return {
+    sps: sps, sale: sale,
+    ghiChu: $('stGhiChu').value.trim(),
+    hen: ST.loai==='hen' ? $('stHen').value.trim() : '',
+    gio: new Date().toLocaleString('vi-VN'),
+    tinh: stTinhTien()
+  };
+}
+/* --- dựng object phiếu. daGui=false là phiếu chỉ để in, chưa đẩy sang hệ sale --- */
+function stDungPhieu(d, tenCH, nvGiao, daGui){
+  return {
+    id: stTaoMa(), gio: d.gio, ngay: homNay(),
+    ch: tenCH, nv: nvGiao||'', sale: d.sale, coso: COSO,
+    loai: ST.loai, hen: d.hen, ghichu: d.ghiChu,
+    daGui: !!daGui,
+    sps: d.sps.map(function(s){ return s.ten+' ×'+num(s.sl); }).join(' · '),
+    lines: d.sps.map(function(s){
+      return { ten:String(s.ten).trim(), dvt:stDvt(s.ten), sl:num(s.sl),
+               gia:num(s.gia), tt:stTienDong(s), note:s.note||'' };
+    }),
+    tongHang: d.tinh.tongHang, ckPct: pct(ST.ck), ck: d.tinh.ckTien,
+    vatPct: pct(ST.vat), vat: d.tinh.vatTien, tong: d.tinh.tong
+  };
+}
+function stLuuPhieu(phieu){
+  var hist=ld('hdnt_st_history',[]);
+  hist.unshift(phieu);
+  sv('hdnt_st_history',hist.slice(0,30));
+}
+
+/* --- nút 2: chỉ tạo phiếu, KHÔNG gọi sang hệ vận đơn sale --- */
+function stChiPhieu(){
+  var d=stDocDon(); if(!d) return;
+  var phieu=stDungPhieu(d, ST.ch, '', false);
+  stNhoGia(ST.ch, d.sps);
+  stLuuPhieu(phieu);
+  toast('Đã tạo phiếu '+phieu.id+' — chưa gửi đơn sang vận đơn sale');
+  stReset(); stVeLichSu();
+  vePhieuST(phieu); go(6);
+}
+
+/* --- nút 1: gửi đơn rồi tạo phiếu --- */
+function stGui(){
+  var don=stDocDon(); if(!don) return;
+  var sps=don.sps, sale=don.sale, ghiChu=don.ghiChu, hen=don.hen, gio=don.gio;
 
   // 16 cột — giữ đúng thứ tự app vandon-sale đang gửi
   var rows=sps.map(function(s){
@@ -1696,23 +1759,11 @@ function stGui(){
   vdsPost({loai:'vandon_ngay', nv:'', sale:sale, rows:rows}).then(function(d){
     if(btn){ btn.disabled=false; btn.textContent='Gửi đơn + tạo phiếu'; }
     if(!d || !d.ok){ toast('Lỗi: '+((d&&(d.msg||d.error))||'không rõ')); return; }
-    var spTxt = d.spList || sps.map(function(s){ return s.ten+' ×'+num(s.sl); }).join(' · ');
-    toast('Đã gửi '+maPhieu+' cho NV '+(d.nv||'(tự gán)'));
+    var phieu = stDungPhieu(don, d.tenCH||ST.ch, d.nv||'', true);
+    if(d.spList) phieu.sps = d.spList;
+    toast('Đã gửi '+phieu.id+' cho NV '+(d.nv||'(tự gán)'));
     stNhoGia(ST.ch, sps);
-    var phieu = {
-      id: maPhieu, gio: gio, ngay: homNay(),
-      ch: d.tenCH||ST.ch, nv: d.nv||'', sale: sale, coso: COSO,
-      loai: ST.loai, hen: hen, ghichu: ghiChu, sps: spTxt,
-      lines: sps.map(function(s){
-        return { ten:String(s.ten).trim(), dvt:stDvt(s.ten), sl:num(s.sl),
-                 gia:num(s.gia), tt:stTienDong(s), note:s.note||'' };
-      }),
-      tongHang: tinh.tongHang, ckPct: pct(ST.ck), ck: tinh.ckTien,
-      vatPct: pct(ST.vat), vat: tinh.vatTien, tong: tinh.tong
-    };
-    var hist=ld('hdnt_st_history',[]);
-    hist.unshift(phieu);
-    sv('hdnt_st_history',hist.slice(0,30));
+    stLuuPhieu(phieu);
     stReset(); stVeLichSu();
     vePhieuST(phieu); go(6);
   }).catch(function(){
@@ -1721,9 +1772,10 @@ function stGui(){
   });
 }
 function stReset(){
-  ST={ ch:'', loai:'order', hen:'', ck:0, vat:0, lines:[] };
+  ST={ ch:'', loai:'order', hen:'', ck:0, vat:0, vatBat:false, lines:[] };
   $('stTim').value=''; $('stGhiChu').value=''; $('stHen').value='';
-  $('stCk').value=''; $('stVat').value='';
+  $('stCk').value=''; $('stVat').value=String(VAT_MAC_DINH);
+  stBatVat(false);   // mỗi đơn mới VAT tắt sẵn, sale tự tích
   $('stDaChon').textContent='— chưa chọn —';
   $('stHenWrap').style.display='none';
   var ps=$('stLoaiPills').querySelectorAll('.pill');
@@ -1735,11 +1787,15 @@ function stVeLichSu(){
   if(!hist.length){ $('stLichSu').innerHTML='<div class="empty">Chưa gửi đơn siêu thị nào từ máy này</div>'; return; }
   var ten={order:'đơn thường',gap:'gấp',hen:'hẹn giờ',thu_no:'thu nợ'};
   $('stLichSu').innerHTML=hist.map(function(x){
+    // phiếu cũ (trước v1.5) không có cờ daGui -> coi như đã gửi
+    var daGui = (x.daGui !== false);
+    var meta = esc(x.gio)+(x.id?' · phiếu '+esc(x.id):'')+
+               (daGui?' · gửi NV '+esc(x.nv||'(tự gán)'):' · chưa gửi đơn')+
+               ' · '+(ten[x.loai]||x.loai);
     return '<div class="don xuat"><div class="h"><div>'+
       '<div class="kh">'+esc(x.ch)+'</div>'+
-      '<div class="meta">'+esc(x.gio)+(x.id?' · phiếu '+esc(x.id):'')+' · gửi NV '+esc(x.nv||'(tự gán)')+' · '+(ten[x.loai]||x.loai)+
-      (x.hen?' · '+esc(x.hen):'')+'</div></div>'+
-      '<span class="tag t-xuat">Đã gửi</span></div>'+
+      '<div class="meta">'+meta+(x.hen?' · '+esc(x.hen):'')+'</div></div>'+
+      '<span class="tag '+(daGui?'t-xuat':'t-cho')+'">'+(daGui?'Đã gửi':'Chỉ phiếu')+'</span></div>'+
       '<div class="sp">'+esc(x.sps)+(num(x.tong)?' — <b>'+fmt(x.tong)+' đ</b>':'')+'</div>'+
       (x.ghichu?'<div class="mu" style="margin-top:6px">Ghi chú: '+esc(x.ghichu)+'</div>':'')+
       (x.lines&&x.lines.length?'<button class="del" style="color:var(--cam)" data-act="stPhieu" data-id="'+esc(x.id)+'">Mở phiếu / In lại</button>':'')+
