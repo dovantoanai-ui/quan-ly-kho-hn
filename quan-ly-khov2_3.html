@@ -278,6 +278,9 @@ table.kkt td.minus{color:var(--re);}
 .kk-hist-s{font-size:11.5px;color:var(--mu);margin-top:2px;line-height:1.5;}
 .lockpill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--grb);color:var(--gr);white-space:nowrap;}
 .lockpill.draft{background:var(--amb);color:var(--am);}
+
+/* ===== DANH MUC MOT NGUON (v2.26) ===== */
+.dm-canhbao{display:none;margin:6px 0 0 28px;font-size:11.5px;line-height:1.5;color:var(--re);font-weight:500;}
 </style>
 </head>
 <body>
@@ -497,12 +500,8 @@ table.kkt td.minus{color:var(--re);}
       <div class="cmng" id="nvMng"></div>
     </div>
     <div class="sec" style="margin-top:10px">
-      <div class="sec-hd"><div class="sec-ico">&#128230;</div><div class="sec-ttl">San pham <span class="cbadge" id="prCnt">0</span></div></div>
-      <div class="itabs"><button class="itab on" id="prT1" onclick="swTab('pr',1)">Nhap 1 ten</button><button class="itab" id="prT2" onclick="swTab('pr',2)">Dan danh sach</button><button class="itab" id="prT3" onclick="swTab('pr',3)">Import file</button></div>
-      <div class="ipanel" id="prP1"><div class="arow" style="padding:0"><input class="ainp" id="prAddI" type="text" placeholder="Ten san pham..."><button class="abtn" onclick="addOne('pr')">Them</button></div></div>
-      <div class="ipanel" id="prP2" style="display:none"><textarea class="bulk-ta" id="prBulk" placeholder="Moi dong 1 ten..."></textarea><div class="ibtns"><button class="btnimport" onclick="bulkAdd('pr')">Them tat ca</button><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
-      <div class="ipanel" id="prP3" style="display:none"><button onclick="document.getElementById('prFile').click()" style="width:100%;padding:10px;border-radius:9px;border:1.5px dashed var(--bd2);background:none;color:var(--bl);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;cursor:pointer;">Chon file Excel/CSV</button><input type="file" id="prFile" class="finp-file" accept=".xlsx,.xls,.csv" onchange="importFile(this)"><div style="font-size:11px;color:var(--mu);margin-top:5px;">Cot dau = ten san pham</div><div class="ibtns" style="margin-top:8px;"><button class="btnclr" onclick="clearAll('pr')">Xoa het</button></div></div>
-      <div class="cmng" id="prMng"></div>
+      <div class="sec-hd"><div class="sec-ico">&#128230;</div><div class="sec-ttl">Danh muc san pham <span class="cbadge" id="dmCnt">0</span></div></div>
+      <div style="padding:12px 14px;" id="dmBox"></div>
     </div>
     <!-- Google Sheet -->
     <div class="sec" style="margin-top:10px;margin-bottom:10px;">
@@ -724,7 +723,7 @@ function getGH(){return ld('kho_gh',[]);}function svGH(v){sv('kho_gh',v);}
 function getNV(){return ld('kho_nv',[]);}function svNV(v){sv('kho_nv',v);}
 function getProds(){return ld('prods',[]);}function svProds(v){sv('prods',v);}
 
-var CFG={gh:{get:getGH,save:svGH,mng:'ghMng',cnt:'ghCnt'},nv:{get:getNV,save:svNV,mng:'nvMng',cnt:'nvCnt'},pr:{get:getProds,save:svProds,mng:'prMng',cnt:'prCnt'}};
+var CFG={gh:{get:getGH,save:svGH,mng:'ghMng',cnt:'ghCnt'},nv:{get:getNV,save:svNV,mng:'nvMng',cnt:'nvCnt'}};
 var KHO_LIST=['Ha Noi','Thanh Hoa'];
 var HANG_STS=['Mang di','Mang ve','Thu hoi','Tang','Huy'];
 // Kho KHONG truc tiep xuat hang (Toan chot 29/07) - hang ra kho chi qua:
@@ -991,13 +990,15 @@ function renderDlRows(){
     var nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='Go de tim san pham...';nameInp.autocomplete='off';nameInp.className='pname-inp';nameInp.value=d.name||'';
     var slId='sdDlP_'+r;
     var slDiv=document.createElement('div');slDiv.className='sdl';slDiv.id=slId;
-    nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,getProds,this.value,rr);};})(r,d,slId);
-    nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,getProds,dd.name||'',rr);};})(r,d,slId);
+    nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,dmTenChuan,this.value,rr,true);dmCanhBaoTheoRow(rr,this.value);};})(r,d,slId);
+    nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,dmTenChuan,dd.name||'',rr,true);};})(r,d,slId);
     nameInp.onblur=(function(lid){return function(){setTimeout(function(){var e=document.getElementById(lid);if(e)e.classList.remove('on');},180);};})(slId);
     sdwDiv.appendChild(nameInp);sdwDiv.appendChild(slDiv);
     var delBtn=document.createElement('button');delBtn.className='bdel';delBtn.textContent='x';
     delBtn.onclick=(function(rr){return function(){removeDlRow(rr);};})(r);
     r1.appendChild(idx);r1.appendChild(sdwDiv);r1.appendChild(delBtn);div.appendChild(r1);
+    var cbao=document.createElement('div');cbao.className='dm-canhbao';cbao.id='dmw_'+r;
+    dmVeCanhBao(cbao,d.name);div.appendChild(cbao);
     // qty + price grid
     var pr2=document.createElement('div');pr2.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-left:28px;margin-top:8px;';
     var mQty=document.createElement('div');mQty.className='mini';
@@ -1071,13 +1072,15 @@ function makeRow(r,i,d,statuses,clsMap,ns){
   var nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='Go de tim san pham...';nameInp.autocomplete='off';nameInp.className='pname-inp';nameInp.value=d.name||'';
   var slId='sdP_'+r;
   var slDiv=document.createElement('div');slDiv.className='sdl';slDiv.id=slId;
-  nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,getProds,this.value,rr);};})(r,d,slId);
-  nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,getProds,dd.name||'',rr);};})(r,d,slId);
+  nameInp.oninput=(function(rr,dd,lid){return function(){dd.name=this.value;sdRender(lid,dmTenChuan,this.value,rr,true);dmCanhBaoTheoRow(rr,this.value);};})(r,d,slId);
+  nameInp.onfocus=(function(rr,dd,lid){return function(){sdRender(lid,dmTenChuan,dd.name||'',rr,true);};})(r,d,slId);
   nameInp.onblur=(function(lid){return function(){setTimeout(function(){var e=document.getElementById(lid);if(e)e.classList.remove('on');},180);};})(slId);
   sdwDiv.appendChild(nameInp);sdwDiv.appendChild(slDiv);
   var delBtn=document.createElement('button');delBtn.className='bdel';delBtn.textContent='x';
   delBtn.onclick=(function(rr,n){return function(){if(n==='h')removeHRow(rr);else removeKRow(rr);};})(r,ns);
   r1.appendChild(idx);r1.appendChild(sdwDiv);r1.appendChild(delBtn);div.appendChild(r1);
+  var cbao=document.createElement('div');cbao.className='dm-canhbao';cbao.id='dmw_'+r;
+  dmVeCanhBao(cbao,d.name);div.appendChild(cbao);
   var stpick=document.createElement('div');stpick.className='stpick';
   statuses.forEach(function(s){
     var cl=clsMap[s]||'di';var btn=document.createElement('button');
@@ -1103,15 +1106,15 @@ function makeRow(r,i,d,statuses,clsMap,ns){
 }
 
 // SEARCHABLE DROPDOWN
-function sdRender(listId,itemsFn,query,rowId){
+function sdRender(listId,itemsFn,query,rowId,khoaDanhMuc){
   var el=document.getElementById(listId);if(!el)return;
   var q=(query||'').trim().toLowerCase();var all=itemsFn();
   var filtered=q?all.filter(function(v){return v.toLowerCase().indexOf(q)>=0;}):all.slice(0,80);
   el.innerHTML='';
-  if(!filtered.length&&!q){var e=document.createElement('div');e.className='sd-empty';e.textContent='Chua co du lieu. Them trong Cai dat';el.appendChild(e);}
-  else if(!filtered.length){var e2=document.createElement('div');e2.className='sd-empty';e2.textContent='Khong tim thay';el.appendChild(e2);}
+  if(!filtered.length&&!q){var e=document.createElement('div');e.className='sd-empty';e.textContent=khoaDanhMuc?'Chua tai duoc danh muc - vao Cai dat bam Tai lai danh muc':'Chua co du lieu. Them trong Cai dat';el.appendChild(e);}
+  else if(!filtered.length){var e2=document.createElement('div');e2.className='sd-empty';e2.textContent=khoaDanhMuc?'Khong co trong danh muc - khai vao MasterData cot F truoc':'Khong tim thay';el.appendChild(e2);}
   else{filtered.forEach(function(v){var opt=document.createElement('div');opt.className='sdo';opt.textContent=v;opt.onmousedown=(function(val){return function(){sdPick(listId,val,rowId);};})(v);el.appendChild(opt);});}
-  if(q&&all.indexOf(query)<0){var add=document.createElement('div');add.className='sd-new';add.textContent='+ Them: '+query;add.onmousedown=(function(val){return function(){if(rowId){var a=getProds();if(a.indexOf(val)<0){a.push(val);svProds(a);}}else{if(listId==='sdGH'){var b=getGH();if(b.indexOf(val)<0){b.push(val);svGH(b);}}else{var c=getNV();if(c.indexOf(val)<0){c.push(val);svNV(c);}}}sdPick(listId,val,rowId);};})(query);el.appendChild(add);}
+  if(q&&!khoaDanhMuc&&all.indexOf(query)<0){var add=document.createElement('div');add.className='sd-new';add.textContent='+ Them: '+query;add.onmousedown=(function(val){return function(){if(rowId){var a=getProds();if(a.indexOf(val)<0){a.push(val);svProds(a);}}else{if(listId==='sdGH'){var b=getGH();if(b.indexOf(val)<0){b.push(val);svGH(b);}}else{var c=getNV();if(c.indexOf(val)<0){c.push(val);svNV(c);}}}sdPick(listId,val,rowId);};})(query);el.appendChild(add);}
   el.classList.add('on');
   var inp=el.previousElementSibling;if(inp){var rect=inp.getBoundingClientRect();el.style.top=(rect.bottom+4)+'px';}
 }
@@ -1125,7 +1128,7 @@ function sdPick(listId,val,rowId){
   var el=document.getElementById(listId);if(el)el.classList.remove('on');
   if(rowId){
     var rd=editType==='h'?hRd:editType==='k'?kRd:editType==='dl'?dlRd:dlRd;
-    if(rd[rowId]!==undefined){rd[rowId].name=val;var row=document.querySelector('[data-r="'+rowId+'"]');if(row){var inp=row.querySelector('.pname-inp,.sdi');if(inp)inp.value=val;}}
+    if(rd[rowId]!==undefined){rd[rowId].name=val;var row=document.querySelector('[data-r="'+rowId+'"]');if(row){var inp=row.querySelector('.pname-inp,.sdi');if(inp)inp.value=val;}dmCanhBaoTheoRow(rowId,val);}
   } else {
     var prev=el?el.previousElementSibling:null;if(prev&&prev.tagName==='INPUT')prev.value=val;
   }
@@ -1655,7 +1658,7 @@ function fbCopy(txt){var ta=document.createElement('textarea');ta.value=txt;ta.s
 
 // SETTINGS
 function swTab(k,n){[1,2,3].forEach(function(i){var t=document.getElementById(k+'T'+i);var p=document.getElementById(k+'P'+i);if(t)t.classList.toggle('on',i===n);if(p)p.style.display=i===n?'':'none';});}
-function renderSettings(){renderGsStatus();['gh','nv','pr'].forEach(function(k){var list=CFG[k].get();document.getElementById(CFG[k].cnt).textContent=list.length;var mng=document.getElementById(CFG[k].mng);mng.innerHTML='';list.forEach(function(v,i){var cx=document.createElement('div');cx.className='cx';var sp=document.createElement('span');sp.textContent=v;var del=document.createElement('span');del.className='cxd';del.textContent='x';del.onclick=(function(kk,ii){return function(){var a=CFG[kk].get();a.splice(ii,1);CFG[kk].save(a);renderSettings();};})(k,i);cx.appendChild(sp);cx.appendChild(del);mng.appendChild(cx);});});}
+function renderSettings(){renderGsStatus();dmVeCaiDat();['gh','nv'].forEach(function(k){var list=CFG[k].get();document.getElementById(CFG[k].cnt).textContent=list.length;var mng=document.getElementById(CFG[k].mng);mng.innerHTML='';list.forEach(function(v,i){var cx=document.createElement('div');cx.className='cx';var sp=document.createElement('span');sp.textContent=v;var del=document.createElement('span');del.className='cxd';del.textContent='x';del.onclick=(function(kk,ii){return function(){var a=CFG[kk].get();a.splice(ii,1);CFG[kk].save(a);renderSettings();};})(k,i);cx.appendChild(sp);cx.appendChild(del);mng.appendChild(cx);});});}
 function addOne(k){var inp=document.getElementById(k+'AddI');var v=inp.value.trim();if(!v)return;var a=CFG[k].get();if(a.indexOf(v)<0){a.push(v);CFG[k].save(a);}inp.value='';renderSettings();toast('Da them: '+v);}
 function bulkAdd(k){var ta=document.getElementById(k+'Bulk');var lines=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);if(!lines.length)return toast('Chua co du lieu');var a=CFG[k].get();var added=0;lines.forEach(function(v){if(a.indexOf(v)<0){a.push(v);added++;}});CFG[k].save(a);ta.value='';renderSettings();toast('Them '+added+' muc');}
 function clearAll(k){CFG[k].save([]);renderSettings();toast('Da xoa toan bo');}
@@ -2178,7 +2181,7 @@ function hdThemNhan(id){
 }
 /* khop ten SP voi danh muc kho de bao cao ton khong bi tach dong */
 function hdTenSP(ten){
-  var ds=getProds()||[], k=hdNorm(ten);
+  var ds=dmTenChuan()||[], k=hdNorm(ten);
   for(var i=0;i<ds.length;i++){
     var t=(typeof ds[i]==='string')?ds[i]:((ds[i]&&ds[i].name)||'');
     if(t && hdNorm(t)===k) return t;
@@ -3123,6 +3126,117 @@ document.addEventListener('click', function(ev){
 })();
 
 /* ============================================================
+   DANH MUC SAN PHAM - MOT NGUON DUY NHAT  (v2.26 - Toan chot 05/08/2026)
+
+   Nguon: Sheet MasterData-NemThanh, tab gid=0, cot F "Ten san pham"
+   -> backend van-don-sale ?loai=products_list -> DM_SP (dmTai/dmXayIndex)
+   -> cache localStorage 'kho_dm_sp', han 6 tieng.
+
+   Truoc v2.26 app co HAI nguon roi nhau: DM_SP dung de chuan hoa ten khi
+   bao cao, con o goi y luc lap phieu lai doc localStorage 'prods' (nhap tay
+   trong Cai dat, thuc te dang rong). Nhan vien go tay tu do -> sinh ten lech
+   kieu "Bb com", "Banh bao sen" -> ton am vi so nhap va so xuat nam o hai dong.
+
+   Tu v2.26: MOI cho can danh sach san pham deu goi dmTenChuan().
+   O nhap phieu KHOA CUNG - chi chon duoc trong danh muc, bo nut "+ Them".
+   ============================================================ */
+
+/* Danh sach ten chuan. Fallback ve 'prods' chi de khong ket khi lan dau
+   chua tai duoc danh muc va may cung chua co cache. */
+function dmTenChuan(){
+  if(DM_SP && DM_SP.tok && DM_SP.tok.length){
+    return DM_SP.tok.map(function(c){ return c.ten; });
+  }
+  var v=ld('kho_dm_sp',null);
+  if(v && v.products && v.products.length) return v.products.slice();
+  return getProds();
+}
+function dmCoTen(ten){
+  var k=hdNorm(ten);
+  if(!k) return true;                       // o trong thi khong canh bao
+  if(DM_SP && DM_SP.exact && DM_SP.exact[k]) return true;
+  var ds=dmTenChuan();
+  for(var i=0;i<ds.length;i++){ if(hdNorm(ds[i])===k) return true; }
+  return false;
+}
+/* Dong canh bao do duoi o nhap - danh cho phieu cu mang ten lech */
+function dmVeCanhBao(el,ten){
+  if(!el) return;
+  if(!ten || dmCoTen(ten)){ el.textContent=''; el.style.display='none'; return; }
+  el.textContent='Ten nay khong co trong danh muc - chon lai ten chuan, hoac khai vao MasterData cot F truoc.';
+  el.style.display='';
+}
+function dmCanhBaoTheoRow(rowId,ten){
+  dmVeCanhBao(document.getElementById('dmw_'+rowId), ten);
+}
+
+/* ---- Khoi danh muc trong Cai dat ---- */
+function dmVeCaiDat(){
+  var el=document.getElementById('dmBox'); if(!el) return;
+  el.innerHTML='';
+  var ds=dmTenChuan();
+  var v=ld('kho_dm_sp',null);
+  var cnt=document.getElementById('dmCnt'); if(cnt) cnt.textContent=ds.length;
+
+  var ng=document.createElement('div');
+  ng.style.cssText='font-size:12px;color:var(--mu);line-height:1.7;margin-bottom:10px;';
+  ng.textContent='Nguon: Sheet MasterData-NemThanh, cot F (Ten san pham). App tu lam moi sau 6 tieng.';
+  el.appendChild(ng);
+
+  var tt=document.createElement('div');
+  if(v && v.luc){
+    var d=new Date(v.luc);
+    var gio=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    var cu=(Date.now()-v.luc)>21600000;
+    tt.className=cu?'kk-warn':'kk-ok';
+    tt.textContent=(cu?'Danh muc da qua han 6 tieng - ':'')+'Tai luc '+gio+' ngay '
+      +fmtD(kkNgayCuaEpoch(v.luc))+' - '+ds.length+' ten.';
+  } else {
+    tt.className='kk-warn';
+    tt.textContent='Chua tai duoc danh muc tu Sheet. Bam nut duoi de tai.';
+  }
+  el.appendChild(tt);
+
+  var sp1=document.createElement('div'); sp1.style.height='10px'; el.appendChild(sp1);
+
+  var btn=document.createElement('button');
+  btn.className='kk-bigbtn'; btn.textContent='Tai lai danh muc ngay';
+  btn.onclick=function(){ dmTaiLai(btn); };
+  el.appendChild(btn);
+
+  var sp2=document.createElement('div'); sp2.style.height='10px'; el.appendChild(sp2);
+
+  var mo=document.createElement('button');
+  mo.className='kk-qbtn'; mo.textContent='Xem '+ds.length+' ten';
+  var ds2=document.createElement('div');
+  ds2.className='cmng'; ds2.style.display='none';
+  ds.forEach(function(t){
+    var cx=document.createElement('div'); cx.className='cx';
+    var s=document.createElement('span'); s.textContent=t;
+    cx.appendChild(s); ds2.appendChild(cx);
+  });
+  mo.onclick=function(){
+    var an=ds2.style.display==='none';
+    ds2.style.display=an?'':'none';
+    mo.textContent=(an?'An danh sach':'Xem '+ds.length+' ten');
+  };
+  el.appendChild(mo);
+  el.appendChild(ds2);
+}
+function dmTaiLai(btn){
+  if(btn){ btn.disabled=true; btn.textContent='Dang tai...'; }
+  try{ localStorage.removeItem('kho_dm_sp'); }catch(e){}
+  DM_SP=null; DM_KHOP={};
+  dmTai(function(){
+    var ds=dmTenChuan();
+    if(btn){ btn.disabled=false; btn.textContent='Tai lai danh muc ngay'; }
+    dmVeCaiDat();
+    toast(ds.length?('Da tai '+ds.length+' ten san pham'):'Khong tai duoc - kiem tra mang roi thu lai');
+  });
+}
+
+
+/* ============================================================
    KIEM KE KHO THEO MOC THOI DIEM  (v2.25 - Toan chot 04/08/2026)
 
    Muc tieu: hang tuan chot mot lan, so sanh ton so sach voi so
@@ -3259,7 +3373,7 @@ function kkTinhTon(ngay,gio){
 function kkDanhSachSP(tinh, ngay, toanBo){
   var keys={};
   if(toanBo){
-    getProds().forEach(function(t){ var c=spTenChuan(t); if(c) keys[c]=1; });
+    dmTenChuan().forEach(function(t){ var c=spTenChuan(t); if(c) keys[c]=1; });
   }
   Object.keys(tinh.map).forEach(function(k){ if(kkTonSo(tinh.map[k])!==0) keys[k]=1; });
   /* SP co phat sinh trong CHINH ngay kiem ke phai luon co mat, ke ca khi
@@ -3374,7 +3488,7 @@ function kkVeB1(){
   var pv=document.getElementById('kkPhamVi');
   if(pv){
     pv.innerHTML='';
-    var soAuto='', soAll=getProds().length;
+    var soAuto='', soAll=dmTenChuan().length;
     if(KK_TINH){ soAuto=' ('+kkDanhSachSP(KK_TINH,KK_NGAY,false).length+' SP)'; }
     [['Ton khac 0 + phat sinh 30 ngay'+soAuto,false],['Toan bo danh muc ('+soAll+' SP)',true]]
     .forEach(function(o){
