@@ -145,6 +145,33 @@ td{padding:8px 7px;border-bottom:1px solid #f0f2f0}
 .inv-sign{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;text-align:center}
 .inv-sign div{font-size:10.5px;color:var(--mu)}
 .inv-sign b{display:block;font-size:11.5px;color:var(--tx);margin-bottom:42px}
+
+/* ===== phiếu xuất kho bán hàng — bám mẫu chứng từ kế toán =====
+   Rộng cố định 720px cho vừa 7 cột; trên điện thoại cuộn ngang,
+   còn html2canvas vẫn chụp đủ bề ngang nên PDF không bị bóp chữ. */
+.inv2wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.inv2{width:720px;background:#fff;color:#000;padding:26px 30px;
+      font-family:'Times New Roman',Times,serif;font-size:13.5px;line-height:1.5}
+.inv2 .co{font-size:13px;text-transform:uppercase;font-weight:400}
+.inv2 .dchi{font-size:12.5px;margin-top:2px;max-width:64%}
+.inv2 .tt{text-align:center;font-size:21px;font-weight:700;margin:20px 0 0}
+.inv2 .ng{text-align:center;font-size:13.5px;font-style:italic;font-weight:700;margin-top:5px}
+.inv2 .so{text-align:center;font-size:13.5px;margin-top:3px}
+.inv2 .kh{margin-top:18px}
+.inv2 .kh div{padding:2.5px 0}
+.inv2 table{width:100%;border-collapse:collapse;margin-top:12px}
+.inv2 th,.inv2 td{border:1px solid #000;padding:4px 6px;font-size:13px;text-align:left}
+.inv2 th{text-align:center;font-weight:700}
+.inv2 td.c{text-align:center}
+.inv2 td.r{text-align:right}
+.inv2 .b{font-weight:700}
+.inv2 .chu{margin-top:12px}
+.inv2 .ngayky{text-align:right;font-style:italic;margin-top:14px;padding-right:52px}
+.inv2 .ky{display:flex;margin-top:6px;text-align:center}
+.inv2 .ky > div{flex:1}
+.inv2 .ky b{display:block;font-weight:700;font-size:13.5px}
+.inv2 .ky i{font-size:12.5px}
+.inv2 .kyo{height:58px}
 </style>
 </head>
 <body>
@@ -466,6 +493,49 @@ function pad(n){ return String(n).padStart(2,'0'); }
 function homNay(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function thangNay(){ return homNay().slice(0,7); }
 function gioPhutNgay(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes())+' '+pad(d.getDate())+'/'+pad(d.getMonth()+1); }
+/* số có 2 chữ số lẻ kiểu chứng từ kế toán: 300,00 · 5.097,60 */
+function fmt2(n){
+  return (Number(n)||0).toLocaleString('vi-VN',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+/* ---------- đọc số tiền thành chữ (cách viết của chứng từ kế toán) ---------- */
+var CHU_SO = ['không','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+var BAC_SO = ['',' nghìn',' triệu',' tỷ'];
+function docBaSo(so, laNhomDau){
+  var tram=Math.floor(so/100), chuc=Math.floor((so%100)/10), dv=so%10, s='';
+  if(tram>0) s+=CHU_SO[tram]+' trăm';
+  else if(!laNhomDau && (chuc>0 || dv>0)) s+='không trăm';
+  if(chuc>1){
+    s+=' '+CHU_SO[chuc]+' mươi';
+    if(dv===1) s+=' mốt';
+    else if(dv===4) s+=' tư';
+    else if(dv===5) s+=' lăm';
+    else if(dv>0) s+=' '+CHU_SO[dv];
+  } else if(chuc===1){
+    s+=' mười';
+    if(dv===5) s+=' lăm';
+    else if(dv>0) s+=' '+CHU_SO[dv];
+  } else if(dv>0){
+    if(tram>0 || !laNhomDau) s+=' lẻ';
+    s+=' '+CHU_SO[dv];
+  }
+  return s.trim();
+}
+function docSoTienVN(n){
+  n=Math.round(Number(n)||0);
+  if(n===0) return 'Không đồng chẵn.';
+  var am=n<0; n=Math.abs(n);
+  var nhom=[];
+  while(n>0){ nhom.unshift(n%1000); n=Math.floor(n/1000); }
+  var phan=[];
+  for(var i=0;i<nhom.length;i++){
+    if(nhom[i]===0) continue;
+    phan.push(docBaSo(nhom[i], i===0) + BAC_SO[nhom.length-1-i]);
+  }
+  var s=phan.join(' ').replace(/\s+/g,' ').trim();
+  s=s.charAt(0).toUpperCase()+s.slice(1);
+  return (am ? 'Âm '+s.charAt(0).toLowerCase()+s.slice(1) : s) + ' đồng chẵn.';
+}
 function ngayVN(s){ if(!s) return ''; var p=String(s).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : s; }
 function ld(k,d){ try{ var v=localStorage.getItem(k); return v!==null?JSON.parse(v):d; }catch(e){ return d; } }
 function sv(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -1845,8 +1915,9 @@ function stVeTomTat(){
 
 /* --- mã phiếu siêu thị: ST + ddMM + STT trong ngày --- */
 function stTaoMa(){
+  // theo mẫu chứng từ MISA: BH + ddMMyy + STT trong ngày, ví dụ BH040826-01
   var d=new Date();
-  var tien='ST'+pad(d.getDate())+pad(d.getMonth()+1);
+  var tien='BH'+pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2);
   var da={};
   ld('hdnt_st_history',[]).forEach(function(x){ if(String(x.id||'').indexOf(tien)===0) da[x.id]=1; });
   // phiếu này chỉ lưu trên máy, không đồng bộ Sheet -> để mã sạch cho dễ đọc trên giấy.
@@ -1983,44 +2054,85 @@ function stMoPhieu(id){
 function vePhieuST(d){
   if(!d){ $('invWrap').innerHTML='<div class="empty">Chưa có phiếu siêu thị nào.</div>'; return; }
   donHienTai=d;
-  var tenLoai={order:'Đơn thường',gap:'Gấp',hen:'Hẹn giờ',thu_no:'Thu nợ'}[d.loai]||d.loai||'';
-  var ln=(d.lines||[]).map(function(l){
-    // in tên có dấu cho khách; phiếu cũ chưa có tenIn thì tra lại từ danh mục chuẩn
+
+  var ds=(d.lines||[]);
+  var ln=ds.map(function(l,i){
+    // in tên CÓ DẤU cho khách; phiếu cũ chưa có tenIn thì tra lại danh mục chuẩn
     var tenHien = l.tenIn || mdTenIn(l.ten);
-    return '<tr><td>'+esc(tenHien)+(l.dvt?'<br><span class="mu">'+esc(l.dvt)+'</span>':'')+
-      (l.note?'<br><span class="mu">'+esc(l.note)+'</span>':'')+'</td>'+
-      '<td class="r">'+fmt(l.sl)+'</td><td class="r">'+fmt(l.gia)+'</td><td class="r">'+fmt(l.tt)+'</td></tr>';
+    var x = mdTheoTen(l.ten);
+    var maHang = (x && x.ma) || '';
+    return '<tr>'+
+      '<td class="c">'+(i+1)+'</td>'+
+      '<td>'+esc(maHang)+'</td>'+
+      '<td>'+esc(tenHien)+(l.note?' <i>('+esc(l.note)+')</i>':'')+'</td>'+
+      '<td>'+esc(l.dvt||'')+'</td>'+
+      '<td class="r">'+fmt2(l.sl)+'</td>'+
+      '<td class="r">'+fmt2(l.gia)+'</td>'+
+      '<td class="r">'+fmt(l.tt)+'</td>'+
+      '</tr>';
   }).join('');
+
+  var ngay=String(d.ngay||'').split('-');   // yyyy-mm-dd
+  var dongNgay = (ngay.length===3)
+    ? 'Ngày '+ngay[2]+' tháng '+ngay[1]+' năm '+ngay[0]
+    : 'Ngày ..... tháng ..... năm ........';
+
+  var tenLoai={order:'',gap:'Đơn gấp',hen:'Hẹn giờ',thu_no:'Thu nợ'}[d.loai]||'';
+  var ghiChuGop = [tenLoai, (d.hen||''), (d.ghichu||'')].filter(Boolean).join(' · ');
+
   $('invWrap').innerHTML=
-   '<div class="inv" id="invPaper">'+
-    '<div class="inv-head">'+
-      (LOGO.indexOf('data:')===0?'<img class="inv-logo" src="'+LOGO+'" alt="NemThanh">':'')+
-      '<div class="inv-ln co">'+esc(CFG.cty)+'</div>'+
-      '<div class="inv-ln">'+esc(CFG.diachi)+'</div>'+
-      '<div class="inv-ln">MST: '+esc(CFG.mst)+' · '+esc(CFG.email)+'</div>'+
-      '<div class="inv-ln">Hotline: '+esc(CFG.hotline)+'</div>'+
+   '<div class="inv2wrap"><div class="inv2" id="invPaper">'+
+    '<div class="co">'+esc(CFG.cty)+'</div>'+
+    '<div class="dchi">'+esc(CFG.diachi)+'</div>'+
+
+    '<div class="tt">PHIẾU XUẤT KHO BÁN HÀNG</div>'+
+    '<div class="ng">'+dongNgay+'</div>'+
+    '<div class="so">Số: <b>'+esc(d.id)+'</b></div>'+
+
+    '<div class="kh">'+
+      '<div>Người mua:</div>'+
+      '<div>Tên khách hàng: '+esc(d.ch||'')+'</div>'+
+      '<div>Địa chỉ:</div>'+
+      '<div>Điện thoại:</div>'+
+      '<div>Mã số thuế:</div>'+
+      '<div>Nhân viên bán hàng: '+esc(d.sale||d.nv||'')+'</div>'+
+      (ghiChuGop?'<div>Ghi chú: '+esc(ghiChuGop)+'</div>':'')+
     '</div>'+
-    '<div class="inv-title">PHIẾU BÁN HÀNG</div>'+
-    '<div class="inv-sub">Số '+esc(d.id)+' · Ngày '+ngayVN(d.ngay)+'</div>'+
-    '<div class="inv-kh">'+
-      '<div><span>Cửa hàng</span><b>'+esc(d.ch)+'</b></div>'+
-      '<div><span>Loại đơn</span><b>'+esc(tenLoai)+(d.hen?' · '+esc(d.hen):'')+'</b></div>'+
-      '<div><span>NV bán hàng</span><b>'+esc(d.sale||d.nv||'')+' · Cơ sở '+esc(d.coso||'')+'</b></div>'+
-      (d.ghichu?'<div><span>Ghi chú</span><b>'+esc(d.ghichu)+'</b></div>':'')+
+
+    '<table>'+
+      '<tr>'+
+        '<th style="width:36px">STT</th>'+
+        '<th style="width:82px">Mã hàng</th>'+
+        '<th>Tên hàng</th>'+
+        '<th style="width:66px">Đơn vị</th>'+
+        '<th style="width:84px">Số lượng</th>'+
+        '<th style="width:90px">Đơn giá</th>'+
+        '<th style="width:104px">Thành tiền</th>'+
+      '</tr>'+
+      ln+
+      '<tr><td class="b" colspan="6">Cộng</td><td class="r b">'+fmt(d.tongHang)+'</td></tr>'+
+      '<tr><td colspan="6" class="r">Cộng tiền hàng</td><td class="r b">'+fmt(d.tongHang)+'</td></tr>'+
+      (num(d.ck)
+        ? '<tr><td colspan="6" class="r">Chiết khấu '+(d.ckPct||0)+'%</td><td class="r b">'+fmt(d.ck)+'</td></tr>'
+        : '')+
+      '<tr>'+
+        '<td colspan="3">Thuế suất thuế GTGT: <b>'+(num(d.vat)?(d.vatPct||0)+'%':'X')+'</b></td>'+
+        '<td colspan="3" class="r">Tiền thuế GTGT:</td>'+
+        '<td class="r b">'+fmt(d.vat||0)+'</td>'+
+      '</tr>'+
+      '<tr><td colspan="6" class="r">Tổng tiền thanh toán</td><td class="r b">'+fmt(d.tong)+'</td></tr>'+
+    '</table>'+
+
+    '<div class="chu">Số tiền bằng chữ: <b><i>'+esc(docSoTienVN(d.tong))+'</i></b></div>'+
+    '<div class="chu">Số chứng từ gốc kèm theo: …</div>'+
+
+    '<div class="ngayky">Ngày ….. tháng ….. năm ……..</div>'+
+    '<div class="ky">'+
+      '<div><b>Người mua hàng</b><i>(Ký, họ tên)</i><div class="kyo"></div></div>'+
+      '<div><b>Kế toán trưởng</b><i>(Ký, họ tên)</i><div class="kyo"></div></div>'+
+      '<div><b>Người giao hàng</b><i>(Ký, họ tên, đóng dấu)</i><div class="kyo"></div></div>'+
     '</div>'+
-    '<table class="inv-tb"><tr><th>Sản phẩm</th><th class="r">SL</th><th class="r">Đơn giá</th><th class="r">Thành tiền</th></tr>'+ln+'</table>'+
-    '<div class="inv-sum">'+
-      '<div class="l"><span>Tổng hàng</span><b>'+fmt(d.tongHang)+'</b></div>'+
-      (num(d.ck)?'<div class="l"><span>Chiết khấu '+(d.ckPct||0)+'%</span><b>−'+fmt(d.ck)+'</b></div>':'')+
-      (num(d.vat)?'<div class="l"><span>VAT '+(d.vatPct||0)+'%</span><b>'+fmt(d.vat)+'</b></div>':'')+
-      '<div class="l tt"><span>Tổng thanh toán</span><b>'+fmt(d.tong)+'</b></div>'+
-    '</div>'+
-    '<div class="inv-sign">'+
-      '<div><b>Người giao hàng</b>(ký, ghi rõ họ tên)</div>'+
-      '<div><b>Người nhận hàng</b>(ký, ghi rõ họ tên)</div>'+
-    '</div>'+
-    '<div class="inv-thanks">Cảm ơn quý cửa hàng đã tin dùng đặc sản Nem Thanh</div>'+
-   '</div>';
+   '</div></div>';
 }
 function stVeTatCa(){ stVeGoiY(); stVeLines(); stVeLichSu(); stVeTomTat(); }
 
