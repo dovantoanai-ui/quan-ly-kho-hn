@@ -281,6 +281,20 @@ table.kkt td.minus{color:var(--re);}
 
 /* ===== DANH MUC MOT NGUON (v2.26) ===== */
 .dm-canhbao{display:none;margin:6px 0 0 28px;font-size:11.5px;line-height:1.5;color:var(--re);font-weight:500;}
+
+/* ===== TON KHO v2.28 ===== */
+.tk-row{background:var(--sf);border:1px solid var(--bd);border-radius:11px;margin:0 0 7px;padding:10px 12px;cursor:pointer;}
+.tk-h{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.tk-ten{font-size:13.5px;font-weight:600;line-height:1.3;flex:1;}
+.tk-ton{font-size:18px;font-weight:700;white-space:nowrap;}
+.tk-ton.am{color:var(--re);}
+.tk-b{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bd);}
+.tk-c{text-align:center;}
+.tk-k{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.2px;}
+.tk-v{font-size:13px;font-weight:600;margin-top:2px;}
+.tk-v.xanh{color:var(--gr);}.tk-v.do{color:var(--re);}.tk-v.tim{color:var(--pu);}.tk-v.cam{color:var(--or);}.tk-v.mo{color:var(--mu);}
+.tk-hd{margin-top:6px;font-size:10.5px;color:var(--mu);line-height:1.5;}
+.tk-hd b.lech{color:var(--am);}
 </style>
 </head>
 <body>
@@ -573,9 +587,10 @@ table.kkt td.minus{color:var(--re);}
   </div>
   <div id="tonList" style="padding:8px 10px 10px;"></div>
   <div style="padding:0 14px 26px;font-size:11.5px;color:var(--mu);line-height:1.6;">
-    Ton = <b>Nhap &minus; Xuat kho &minus; Ban le</b>, cong don toan bo lich su Sheet kho
-    + phieu tren may chua day (giong cong thuc bao cao). Hang giao mang di / mang ve khong tru vao ton.
-    Neu so ton khong khop thuc te, bam <b>Kiem ke</b> o goc tren de chot mot thoi diem (ngay + gio) va doi chieu voi so dem thuc te.
+    Ton = <b>Nhap &minus; Ban le &minus; Ban ST &minus; Huy &minus; Khac</b>, cong don den het ngay dang chon.
+    Ban ST = so kho hang giao (Mang di + Tang &minus; Mang ve &minus; Thu hoi) - hang thuc roi khoi kho.
+    Dong "Hoa don NV ghi" chi de doi chieu, khong tru vao ton. Bam vao 1 the de xem chi tiet Di/Ve/Thu hoi.
+    Bam <b>Kiem ke</b> o goc tren de chot mot thoi diem va doi chieu so dem thuc te.
   </div>
 </div>
 
@@ -2947,25 +2962,45 @@ function localChuaDayRows(){
   });
   return out;
 }
-/* Cong thuc giu dung nhu bao cao: Ton = Nhap - Xuat kho - Ban le */
+/* Cong thuc TON v2.28 (Toan chot 12/08/2026):
+   Ton = Nhap - Ban le - Ban ST - Huy - Khac
+   - Ban le : don le tai kho (DonLe)
+   - Ban ST : SO KHO cua hang giao sieu thi = Mang di + Tang - Mang ve - Thu hoi
+              (hang thuc roi khoi kho; so hoa don NV chi de doi chieu, khong tru
+               vao ton - tru ca hai nguon la tru dup)
+   - Huy    : phieu Nhap/Xuat st Huy + phieu Hang giao st Huy
+   - Khac   : xuat chao hang / tang / ban tu phieu Nhap/Xuat (giu tru ton nhu cu)
+   Truoc v2.28 Hang giao KHONG tru ton -> ton phong to hon thuc te rat nhieu
+   (hang da nam tren ke sieu thi van dem la ton kho). */
 function tonTinh(denNgay){
   denNgay=denNgay||'9999-12-31';
   var rows=(KD_CACHE?KD_CACHE.rows:[]).concat(localChuaDayRows());
   var map={};
+  function o(sp){ if(!map[sp])map[sp]={nhap:0,le:0,st:0,huy:0,khac:0,stDi:0,stVe:0,stThu:0,stTang:0}; return map[sp]; }
   rows.forEach(function(r){
-    if(String(r[0]||'')>denNgay) return;   // ton = cong don den het ngay duoc chon
+    if(String(r[0]||'')>denNgay) return;   // cong don den het ngay duoc chon
     var loai=String(r[1]||''), sp=spTenChuan(String(r[3]||'')), tt=String(r[4]||''), sl=parseFloat(r[6])||0;
     if(!sp) return;
     if(loai==='NhapXuat'){
-      if(!map[sp])map[sp]={nhap:0,xuat:0,ban:0};
-      if(tt==='Nhap') map[sp].nhap+=sl; else map[sp].xuat+=sl;
+      var a=o(sp);
+      if(tt==='Nhap') a.nhap+=sl;
+      else if(tt==='Huy') a.huy+=sl;
+      else a.khac+=sl;                       // Xuat (chao hang) / Tang / Ban tu phieu kho
     } else if(loai==='DonLe'){
-      if(!map[sp])map[sp]={nhap:0,xuat:0,ban:0};
-      map[sp].ban+=sl;
+      o(sp).le+=sl;
+    } else if(loai==='HangGiao'){
+      var b=o(sp);
+      if(tt==='Mang di'){ b.st+=sl; b.stDi+=sl; }
+      else if(tt==='Tang'){ b.st+=sl; b.stTang+=sl; }
+      else if(tt==='Mang ve'){ b.st-=sl; b.stVe+=sl; }
+      else if(tt==='Thu hoi'){ b.st-=sl; b.stThu+=sl; }
+      else if(tt==='Huy') b.huy+=sl;
     }
   });
   return map;
 }
+function tonSo(v){ return v ? (v.nhap - v.le - v.st - v.huy - v.khac) : 0; }
+
 var tonNgay=todayStr();
 function tonVeNgayUI(){
   var l=document.getElementById('tonLbl'); if(l)l.textContent=fmtDFull(tonNgay);
@@ -2978,16 +3013,43 @@ function goTon(){
   veTon();
   go('s-ton');
   kdTai(function(){ if(document.getElementById('s-ton').classList.contains('on')) veTon(); });
+  hdBanTai(tonNgay, function(){ if(document.getElementById('s-ton').classList.contains('on')) veTon(); });
 }
 function tonDoiNgay(d){
   var n=lechNgay(tonNgay,d);
   if(n>todayStr()) return;
   tonNgay=n; tonVeNgayUI(); veTon();
+  hdBanTai(tonNgay, function(){ if(document.getElementById('s-ton').classList.contains('on')) veTon(); });
 }
 function tonChonNgay(){
   var i=document.getElementById('tonInp');
-  if(i&&i.value&&i.value<=todayStr()){ tonNgay=i.value; tonVeNgayUI(); veTon(); }
+  if(i&&i.value&&i.value<=todayStr()){ tonNgay=i.value; tonVeNgayUI(); veTon(); hdBanTai(tonNgay, function(){ if(document.getElementById('s-ton').classList.contains('on')) veTon(); }); }
 }
+/* ---- Doi chieu hoa don NV (route hd_ban_sp, backend 21_hd_ban_sp.gs) ----
+   Chi de doi chieu voi so kho, KHONG tru vao ton. Backend chua deploy route
+   nay thi app van chay, dong doi chieu hien '--'. Cache 5 phut theo ngay. */
+var HDBAN={};   // den -> {luc, map: spKhoa -> soCai}
+function hdBanTai(den, cb){
+  var c=HDBAN[den];
+  if(c && (Date.now()-c.luc)<300000){ if(cb)cb(c.map); return; }
+  fetch(VD_URL+'?loai=hd_ban_sp&den='+encodeURIComponent(den))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.ok && d.rows){
+        var m={};
+        d.rows.forEach(function(r2){
+          var k=spKhoa(String(r2[0]||'')); if(!k) return;
+          // giao + tang - thu hoi, don vi CAI (backend da nhan caiPerTui)
+          m[k]=(m[k]||0)+(parseFloat(r2[1])||0)+(parseFloat(r2[2])||0)-(parseFloat(r2[3])||0);
+        });
+        HDBAN[den]={luc:Date.now(), map:m};
+      }
+      if(cb)cb(HDBAN[den]?HDBAN[den].map:null);
+    })
+    .catch(function(){ if(cb)cb(c?c.map:null); });
+}
+
+var TON_MO={};   // sp -> dang mo chi tiet
 function veTon(){
   var el=document.getElementById('tonList'); if(!el)return;
   el.innerHTML='';
@@ -2998,6 +3060,7 @@ function veTon(){
     return;
   }
   var map=tonTinh(tonNgay);
+  var hdm=HDBAN[tonNgay]?HDBAN[tonNgay].map:null;
   var oTim=document.getElementById('tonTim');
   var kw=hdNorm(oTim?oTim.value:'');
   var keys=Object.keys(map).sort();
@@ -3007,34 +3070,46 @@ function veTon(){
     sub.textContent=keys.length+' SP - ton den het '+fmtD(tonNgay)+' - cap nhat '+('0'+luc.getHours()).slice(-2)+':'+('0'+luc.getMinutes()).slice(-2);
   }
   if(!keys.length){ dsTrong(el,'Khong thay san pham nao',''); return; }
-  var card=document.createElement('div'); card.className='ecard'; card.style.cursor='default';
-  var hd=document.createElement('div');
-  hd.style.cssText='display:flex;gap:6px;padding:9px 12px;border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;';
-  ['San pham','Nhap','Xuat','Ban','Ton'].forEach(function(t2,i2){
-    var sp2=document.createElement('span');
-    sp2.style.cssText=i2===0?'flex:1;':'width:'+(i2===4?56:(i2===3?46:52))+'px;text-align:right;';
-    sp2.textContent=t2;
-    hd.appendChild(sp2);
-  });
-  card.appendChild(hd);
   keys.forEach(function(sp3){
-    var v2=map[sp3], ton=v2.nhap-v2.xuat-v2.ban;
-    var row=document.createElement('div');
-    row.style.cssText='display:flex;gap:6px;padding:8px 12px;border-bottom:1px dashed var(--bd);font-size:12px;align-items:center;';
-    function cell(txt,w,mau,dam){
-      var s2=document.createElement('span');
-      s2.style.cssText=(w?('width:'+w+'px;text-align:right;'):'flex:1;')+(mau?('color:'+mau+';'):'')+(dam?'font-weight:700;':'');
-      s2.textContent=txt;
-      return s2;
+    var v=map[sp3], ton=tonSo(v);
+    var row=document.createElement('div'); row.className='tk-row';
+    var h=document.createElement('div'); h.className='tk-h';
+    var t=document.createElement('div'); t.className='tk-ten'; t.textContent=sp3;
+    var g=document.createElement('div'); g.className='tk-ton'+(ton<0?' am':''); g.textContent=fmt(ton);
+    h.appendChild(t); h.appendChild(g); row.appendChild(h);
+    var b=document.createElement('div'); b.className='tk-b';
+    [['Nhap',v.nhap,'xanh'],['Ban le',v.le,'tim'],['Ban ST',v.st,'cam'],['Huy',v.huy,'do'],['Khac',v.khac,'mo']]
+    .forEach(function(cc){
+      var c2=document.createElement('div'); c2.className='tk-c';
+      var k2=document.createElement('div'); k2.className='tk-k'; k2.textContent=cc[0];
+      var v2=document.createElement('div'); v2.className='tk-v '+cc[2]; v2.textContent=fmt(cc[1]);
+      c2.appendChild(k2); c2.appendChild(v2); b.appendChild(c2);
+    });
+    row.appendChild(b);
+    /* dong doi chieu hoa don NV */
+    var hd2=document.createElement('div'); hd2.className='tk-hd';
+    if(!hdm){ hd2.textContent='Hoa don NV ghi: -- (dang tai / backend chua co route)'; }
+    else{
+      var so=hdm[spKhoa(sp3)];
+      if(so===undefined){ hd2.textContent='Hoa don NV ghi: -- (chua co hoa don)'; }
+      else{
+        var lech=v.st-so;
+        hd2.innerHTML='';
+        hd2.appendChild(document.createTextNode('Hoa don NV ghi: '));
+        var bb=document.createElement('b'); bb.textContent=fmt(so);
+        if(lech!==0){ bb.className='lech'; }
+        hd2.appendChild(bb);
+        hd2.appendChild(document.createTextNode(lech===0?' - khop so kho':(' - lech '+(lech>0?'+':'')+fmt(lech)+' so voi so kho, xem man Doi soat')));
+      }
     }
-    row.appendChild(cell(sp3,0,'',true));
-    row.appendChild(cell(fmt(v2.nhap),52,'var(--gr)'));
-    row.appendChild(cell(fmt(v2.xuat),52,'var(--re)'));
-    row.appendChild(cell(fmt(v2.ban),46,'var(--pu)'));
-    row.appendChild(cell(fmt(ton),56,ton<0?'var(--re)':'var(--tx)',true));
-    card.appendChild(row);
+    row.appendChild(hd2);
+    /* cham vao the -> mo chi tiet Di/Ve/Thu/Tang */
+    var ct=document.createElement('div'); ct.className='tk-hd'; ct.style.display=TON_MO[sp3]?'':'none';
+    ct.textContent='Ban ST = Mang di '+fmt(v.stDi)+' + Tang '+fmt(v.stTang)+' - Mang ve '+fmt(v.stVe)+' - Thu hoi '+fmt(v.stThu);
+    row.appendChild(ct);
+    row.onclick=(function(sp4,e2){ return function(){ TON_MO[sp4]=!TON_MO[sp4]; e2.style.display=TON_MO[sp4]?'':'none'; }; })(sp3,ct);
+    el.appendChild(row);
   });
-  el.appendChild(card);
 }
 
 /* ---------------- XUAT EXCEL BAO CAO ---------------- */
@@ -3052,10 +3127,10 @@ function xuatExcelBaoCao(){
     aoa.push(['(chua day)',r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],'','','','','','','','']);
   });
   var map=tonTinh(ngay);   // ton den het ngay dang xem
-  var aoa2=[['San pham','Nhap','Xuat kho','Ban le','Ton den '+fmtD(ngay)]];
+  var aoa2=[['San pham','Nhap','Ban le','Ban ST (so kho)','Huy','Khac','Ton den '+fmtD(ngay)]];
   Object.keys(map).sort().forEach(function(sp4){
     var v3=map[sp4];
-    aoa2.push([sp4,v3.nhap,v3.xuat,v3.ban,v3.nhap-v3.xuat-v3.ban]);
+    aoa2.push([sp4,v3.nhap,v3.le,v3.st,v3.huy,v3.khac,tonSo(v3)]);
   });
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'ChiTiet');
@@ -3327,9 +3402,15 @@ function kkGioPhieu(invId, ngay){
 }
 
 /* ---------- du lieu ---------- */
-/* Phieu ngay N con tren may chua day, dua ve dang dong chi tiet 9 cot */
+/* Phieu ngay N con tren may chua day, dua ve dang dong chi tiet 9 cot.
+   v2.28: gom ca Hang giao vi gio Hang giao TRU vao ton. */
 function kkRowsMayNgay(ngay){
   var out=[];
+  getHangs(ngay).filter(chuaLenSheet).forEach(function(hh){
+    (hh.products||[]).forEach(function(p){
+      if(p.name) out.push([hh.id,ngay,'HangGiao',hh.gh||'',p.name,p.st||'Mang di',p.hang||'Moi',p.qty||0,'']);
+    });
+  });
   getKhos(ngay).filter(chuaLenSheet).forEach(function(k){
     (k.products||[]).forEach(function(p){
       if(p.name) out.push([k.id,ngay,'NhapXuat',k.nv||'',p.name,p.st||'Nhap',p.hang||'Moi',p.qty||0,k.kho||'']);
@@ -3342,22 +3423,22 @@ function kkRowsMayNgay(ngay){
   });
   return out;
 }
-/* Chi dem phieu CO ANH HUONG TOI TON (nhap/xuat kho + don le).
-   Phieu Hang giao khong tru vao ton nen khong dua vao canh bao, keo nguoi
-   kiem ke tuong so ton bi anh huong. */
+/* v2.28: ca 3 loai phieu deu anh huong ton */
 function kkDemPhieuMay(ngay){
-  return getKhos(ngay).filter(chuaLenSheet).length
+  return getHangs(ngay).filter(chuaLenSheet).length
+       + getKhos(ngay).filter(chuaLenSheet).length
        + getDls(ngay).filter(chuaLenSheet).length;
 }
-function kkTonSo(v){ return v ? (v.nhap-v.xuat-v.ban) : 0; }
+function kkTonSo(v){ return tonSo(v); }   // v2.28: dung chung cong thuc voi man Ton kho
 
-/* Ton tai thoi diem (ngay, gio) */
+/* Ton tai thoi diem (ngay, gio) - v2.28 tinh du 5 thanh phan nhu tonTinh */
 function kkTinhTon(ngay,gio){
   var moc=kkMoc(ngay,gio), map={}, khongGio=0, sauMoc=0, truocMoc=0;
-  function o(sp){ if(!map[sp])map[sp]={nhap:0,xuat:0,ban:0}; return map[sp]; }
+  function o(sp){ if(!map[sp])map[sp]={nhap:0,le:0,st:0,huy:0,khac:0}; return map[sp]; }
   var nen=tonTinh(lechNgay(ngay,-1));       // nen: ton het ngay hom truoc
   Object.keys(nen).forEach(function(sp){
-    var a=o(sp), v=nen[sp]; a.nhap+=v.nhap; a.xuat+=v.xuat; a.ban+=v.ban;
+    var a=o(sp), v=nen[sp];
+    a.nhap+=v.nhap; a.le+=v.le; a.st+=v.st; a.huy+=v.huy; a.khac+=v.khac;
   });
   /* Phieu da day Sheet roi sua lai tren may thi mat co pushed -> cung mot inv_id
      nam o CA hai nguon. Uu tien ban tren may (moi hon), bo dong Sheet cu di,
@@ -3372,15 +3453,23 @@ function kkTinhTon(ngay,gio){
   var rows=sheet.concat(may);
   rows.forEach(function(r){
     var loai=String(r[2]||'');
-    if(loai!=='NhapXuat' && loai!=='DonLe') return;   // HangGiao khong tru vao ton
+    if(loai!=='NhapXuat' && loai!=='DonLe' && loai!=='HangGiao') return;
     var sp=spTenChuan(String(r[4]||'')); if(!sp) return;
     var ep=kkGioPhieu(r[0],ngay);
     if(ep===null) khongGio++;
     else if(ep>moc){ sauMoc++; return; }
     else truocMoc++;
     var sl=parseFloat(r[7])||0, tt=String(r[5]||''), a=o(sp);
-    if(loai==='NhapXuat'){ if(tt==='Nhap') a.nhap+=sl; else a.xuat+=sl; }
-    else a.ban+=sl;
+    if(loai==='NhapXuat'){
+      if(tt==='Nhap') a.nhap+=sl;
+      else if(tt==='Huy') a.huy+=sl;
+      else a.khac+=sl;
+    } else if(loai==='DonLe'){ a.le+=sl; }
+    else {   // HangGiao - v2.28 tru vao ton nhu tonTinh
+      if(tt==='Mang di'||tt==='Tang') a.st+=sl;
+      else if(tt==='Mang ve'||tt==='Thu hoi') a.st-=sl;
+      else if(tt==='Huy') a.huy+=sl;
+    }
   });
   return {map:map, moc:moc, khongGio:khongGio, sauMoc:sauMoc, truocMoc:truocMoc,
           trungIdDaBo:trung, soDongNgay:rows.length, coChiTiet:!!KD_NGAY[ngay]};
@@ -3398,7 +3487,7 @@ function kkDanhSachSP(tinh, ngay, toanBo){
      KD_CACHE chi chup mot lan luc mo man nen khong the tin mot minh no. */
   ((KD_NGAY[ngay]&&KD_NGAY[ngay].rows)||[]).forEach(function(r){
     var loai=String(r[2]||'');
-    if(loai!=='NhapXuat' && loai!=='DonLe') return;
+    if(loai!=='NhapXuat' && loai!=='DonLe' && loai!=='HangGiao') return;
     var c=spTenChuan(String(r[4]||'')); if(c) keys[c]=1;
   });
   kkRowsMayNgay(ngay).forEach(function(r){ var c=spTenChuan(String(r[4]||'')); if(c) keys[c]=1; });
@@ -3495,7 +3584,7 @@ function kkVeB1(){
     var soMay=kkDemPhieuMay(KK_NGAY);
     if(soMay>0){
       kkKhoiTao(tt,'','').style.height='8px';
-      kkKhoiTao(tt,'kk-warn','Con '+soMay+' phieu nhap/xuat kho hoac don le ngay '+fmtD(KK_NGAY)
+      kkKhoiTao(tt,'kk-warn','Con '+soMay+' phieu ngay '+fmtD(KK_NGAY)
         +' tren may chua day Sheet. Phieu tao truoc moc chot van duoc tinh vao ton, '
         +'nhung may khac khong thay - nen bam Sheet truoc khi kiem ke.');
     }
