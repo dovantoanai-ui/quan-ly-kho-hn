@@ -2102,9 +2102,26 @@ function dmTai(cb){
     .catch(function(){ if(cb)cb(); });
 }
 var DM_KHOP={};   // cache ket qua khop trong phien
+/* Bang gop ten (v2.27) - ten lac tu du lieu cu / app hoa don ve dung SKU MasterData.
+   Toan chot tung cap 11/08/2026. Hai truong hop DUA va THAP CAM danh muc co 2 SKU
+   na na nhau, khop mo tung doan NHAM SKU -> phai ghim cung o day.
+   Them cap moi: SP_ALIAS[hdNorm('ten lac')] = 'Ten dung trong MasterData cot F'. */
+var SP_ALIAS={
+  'banhbaoganamphomai':'Banh bao ga nam fomai',
+  'banhbaohinhdao':'Banh bao dao tien',
+  'banhnuonglavasocola':'B\u00e1nh Lava Socola 100gr',
+  'banhnuongnhansauriengphomaikemtrungmuoi':'B\u00e1nh n\u01b0\u1edbng nh\u00e2n S\u1ea7u ri\u00eang ph\u00f4 mai & kem tr\u1ee9ng mu\u1ed1i 100gr',
+  'nuocionfujithuong500ml':'Nuoc uong ion kiem chai 500ml',
+  'banhnuongduatrungmuoi':'B\u00e1nh n\u01b0\u1edbng nh\u00e2n D\u1eeba & tr\u1ee9ng mu\u1ed1i 100gr',
+  'banhnuongthapcam':'B\u00e1nh n\u01b0\u1edbng nh\u00e2n Th\u1eadp C\u1ea9m kh\u00f4ng tr\u1ee9ng',
+  'banhnuongnhanthuccam':'B\u00e1nh n\u01b0\u1edbng nh\u00e2n Th\u1eadp C\u1ea9m kh\u00f4ng tr\u1ee9ng'
+};
 function spTenChuan(s){
-  s=String(s||'').trim(); if(!s || !DM_SP) return s;
-  var k=hdNorm(s);
+  s=String(s||'').trim(); if(!s) return s;
+  var kAl=hdNorm(s);
+  if(SP_ALIAS.hasOwnProperty(kAl)) return SP_ALIAS[kAl];
+  if(!DM_SP) return s;
+  var k=kAl;
   if(DM_KHOP.hasOwnProperty(k)) return DM_KHOP[k]||s;
   var kq=null;
   if(DM_SP.exact[k]) kq=DM_SP.exact[k];
