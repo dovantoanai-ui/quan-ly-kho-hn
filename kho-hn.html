@@ -387,7 +387,7 @@ function spTenChuan(s){
 function spKhoa(s){ return hdNorm(spTenChuan(s)); }
 
 /* ============================================================
-   KHO HA NOI - DASHBOARD CONG KHAI (chi doc)  v1.0 - 12/08/2026
+   KHO HA NOI - DASHBOARD CONG KHAI (chi doc)  v1.3 - 13/08/2026
    Nguon: route bao cao kho (?loai=kho_data) cua backend van-don-sale.
    Cong thuc TON dong bo app kho v2.28:
      Ton = Nhap - Ban le - Ban ST - Huy - Khac
@@ -411,10 +411,15 @@ function fmtD(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]
 function fmtDFull(s){if(!s)return'';var d=new Date(s+'T00:00:00');var days=['CN','T2','T3','T4','T5','T6','T7'];return days[d.getDay()]+', '+fmtD(s);}
 
 /* ---------- NHOM SAN PHAM (Toan chot 13/08/2026) ----------
-   Nguon chuan: cot G tab DM_SanPham cua MasterData (doc bang JSONP gviz).
-   O nao cot G trong -> tu phan theo bo luat duoi (trung voi 22_md_nhom.gs). */
+   Nguon chuan: tab DM_Nhom cua MasterData (cot A = ten SP, cot B = nhom),
+   doc bang JSONP gviz. DM_SanPham co 12 cot du lieu san - KHONG dung.
+   Ten chua co trong DM_Nhom -> tu phan theo bo luat duoi (trung 22_md_nhom.gs).
+   Chu y gviz: sheet khong ton tai -> tra ve tab DAU TIEN, nen phai loc
+   nhom hop le (thuoc NHOM_TT) moi nhan. Cache doi key v1->v2 vi v1 tung
+   nhiem du lieu so tu cot G DM_SanPham. */
 var NHOM_TT=['Nem','Banh trung thu','Banh bao & dimsum','Mam','Nuoc ion kiem','Thuc pham khac','Hai san'];
-var NHOM_MAP=ld('khohn_nhom_v1',{});   // spKhoa -> nhom (tu cot G)
+try{ localStorage.removeItem('khohn_nhom_v1'); }catch(e){}
+var NHOM_MAP=ld('khohn_nhom_v2',{});   // spKhoa -> nhom (tu tab DM_Nhom)
 var NHOM_LOC='';                        // chip dang chon, '' = tat ca
 function nhomTheoLuat(ten){
   var k=hdNorm(ten);
@@ -427,7 +432,7 @@ function nhomTheoLuat(ten){
   return 'Hai san';
 }
 function nhomCua(ten){ return NHOM_MAP[spKhoa(ten)]||nhomTheoLuat(ten); }
-/* doc cot F + G MasterData bang JSONP (fetch cross-origin bi CORS chan) */
+/* doc tab DM_Nhom bang JSONP (fetch cross-origin bi CORS chan) */
 function taiNhom(){
   var ten='mdg'+Date.now().toString(36);
   var s=document.createElement('script');
@@ -439,14 +444,15 @@ function taiNhom(){
     rows.forEach(function(r){
       var c=r.c||[];
       function o(i){ return (c[i]&&c[i].v!=null)?String(c[i].v).trim():''; }
-      var t=o(5)||o(2), g=o(6);
-      if(t&&g&&g!=='Nhom') m[spKhoa(t)]=g;
+      var t=o(0), g=o(1);
+      /* chi nhan nhom hop le: chan rac + chan truong hop gviz tra nham tab khac */
+      if(t&&g&&NHOM_TT.indexOf(g)>=0) m[spKhoa(t)]=g;
     });
-    if(Object.keys(m).length){ NHOM_MAP=m; sv('khohn_nhom_v1',m); veTatCa(); }
+    if(Object.keys(m).length){ NHOM_MAP=m; sv('khohn_nhom_v2',m); veTatCa(); }
   };
   s.onerror=function(){ if(s.parentNode)s.parentNode.removeChild(s); };
   s.src='https://docs.google.com/spreadsheets/d/1koko05SHlVy9f2qqhFNqvu6NeD-U8ktvU1UFd0ci0sQ/gviz/tq'
-    +'?tqx=responseHandler:'+ten+'&headers=1&sheet=DM_SanPham&_='+Date.now();
+    +'?tqx=responseHandler:'+ten+'&headers=1&sheet=DM_Nhom&_='+Date.now();
   document.body.appendChild(s);
 }
 function chonNhom(n){ NHOM_LOC=(NHOM_LOC===n)?'':n; veTatCa(); }
@@ -680,7 +686,6 @@ window.addEventListener('DOMContentLoaded', function(){
     if(!document.hidden) taiDuLieu(true);
   });
 });
-
 </script>
 </body>
 </html>
