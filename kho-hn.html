@@ -298,11 +298,12 @@ table.db td:first-child{text-align:left;font-weight:600;}
   </div>
 
   <div style="font-size:11px;color:var(--mu);line-height:1.7;padding:4px 4px 20px;">
-    Trang ch&#7881; &#273;&#7885;c, kh&#244;ng s&#7917;a &#273;&#432;&#7907;c d&#7919; li&#7879;u. T&#7891;n = Nh&#7853;p &minus; B&#225;n l&#7867; &minus; B&#225;n ST &minus; H&#7911;y &minus; Kh&#225;c
+    Trang ch&#7881; &#273;&#7885;c, kh&#244;ng s&#7917;a &#273;&#432;&#7907;c d&#7919; li&#7879;u. T&#7921; l&#224;m m&#7899;i 60 gi&#226;y + khi m&#7903; l&#7841;i tab. T&#7891;n = Nh&#7853;p &minus; B&#225;n l&#7867; &minus; B&#225;n ST &minus; H&#7911;y &minus; Kh&#225;c
     (c&#249;ng c&#244;ng th&#7913;c app kho v2.28). S&#7855;p h&#7871;t = t&#7891;n / t&#7889;c &#273;&#7897; b&#225;n 7 ng&#224;y &#8804; 3 ng&#224;y.
   </div>
 </div>
 <script>
+var DM_KHOP={};   // cache khop ten trong phien (dashboard tu khai - app kho khai o cho khac)
 function hdNorm(s){
   s=String(s||'').toLowerCase().trim();
   s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d');
@@ -406,17 +407,24 @@ function fmtD(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]
 function fmtDFull(s){if(!s)return'';var d=new Date(s+'T00:00:00');var days=['CN','T2','T3','T4','T5','T6','T7'];return days[d.getDay()]+', '+fmtD(s);}
 
 var DASH=ld('khohn_dash_v1',null);   // {luc, rows}
+var DANG_TAI=false;
+/* "Gan real time": tu keo moi 60 giay + keo ngay khi mo lai tab.
+   Luu y ban chat: web chi thay nhung gi DA LEN SHEET - phieu con tren may
+   nhan vien (chua bam nut Sheet trong app kho) thi chua nguon nao thay duoc. */
 function taiDuLieu(force){
-  if(!force && DASH && (Date.now()-DASH.luc)<300000){ veTatCa(); return; }
+  if(!force && DASH && (Date.now()-DASH.luc)<60000){ veTatCa(); return; }
+  if(DANG_TAI) return;
+  DANG_TAI=true;
   var tt=document.getElementById('dbTrangThai');
-  if(tt) tt.textContent='Đang tải dữ liệu từ Sheet kho...';
+  if(tt && !DASH) tt.textContent='Đang tải dữ liệu từ Sheet kho... (lần đầu có thể mất 20-30 giây)';
   fetch(VD_URL+'?loai=kho_data')
     .then(function(r){ return r.json(); })
     .then(function(d){
+      DANG_TAI=false;
       if(d && d.ok && d.rows){ DASH={luc:Date.now(), rows:d.rows}; sv('khohn_dash_v1',DASH); }
       veTatCa();
     })
-    .catch(function(){ veTatCa(true); });
+    .catch(function(e){ DANG_TAI=false; veTatCa(true); });
 }
 /* keo danh muc chuan de ten hien thi dong nhat voi app kho */
 function taiDanhMuc(){
@@ -474,11 +482,18 @@ function tinhTong(){
 function tonCua(v){ return v.nhap-v.le-v.st-v.huy-v.khac; }
 
 function veTatCa(loi){
+  try{ _veTatCa(loi); }
+  catch(e){
+    var t2=document.getElementById('dbTrangThai');
+    if(t2) t2.textContent='Lỗi hiển thị: '+String(e).slice(0,90)+' — bấm Tải lại';
+  }
+}
+function _veTatCa(loi){
   var tt=document.getElementById('dbTrangThai');
-  if(!DASH){ if(tt) tt.textContent=loi?'Không tải được dữ liệu — kiểm tra mạng rồi bấm Tải lại.':'Đang tải...'; return; }
+  if(!DASH){ if(tt) tt.textContent=loi?'Không tải được dữ liệu (Sheet kho phản hồi chậm hoặc mạng lỗi) — chờ 30 giây rồi bấm Tải lại.':'Đang tải...'; return; }
   var luc=new Date(DASH.luc);
   if(tt) tt.textContent='Cập nhật '+('0'+luc.getHours()).slice(-2)+':'+('0'+luc.getMinutes()).slice(-2)
-    +' - '+fmtD(todayStr())+' · nguồn: báo cáo kho (Sheet) · tự làm mới 5 phút'
+    +' - '+fmtD(todayStr())+' · tự làm mới mỗi 60 giây · số chỉ đổi khi kho bấm Sheet đẩy phiếu'
     +(loi?' · LẦN TẢI MỚI NHẤT LỖI - đang hiện số cũ':'');
 
   var T=tinhTong(), ds=Object.keys(T.sp).sort();
@@ -589,7 +604,10 @@ function veTatCa(loi){
 window.addEventListener('DOMContentLoaded', function(){
   taiDanhMuc();
   taiDuLieu(false);
-  setInterval(function(){ taiDuLieu(true); }, 300000);
+  setInterval(function(){ taiDuLieu(true); }, 60000);          // 60 giay/lan
+  document.addEventListener('visibilitychange', function(){    // mo lai tab -> keo ngay
+    if(!document.hidden) taiDuLieu(true);
+  });
 });
 
 </script>
