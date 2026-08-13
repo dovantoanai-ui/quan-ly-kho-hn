@@ -257,6 +257,8 @@ table.db td:first-child{text-align:left;font-weight:600;}
 
 @media (max-width:600px){ .db-kpi{grid-template-columns:repeat(2,1fr);} table.db{font-size:11.5px;} }
 .db-scroll{max-height:420px;overflow-y:auto;}
+.nchip{font-size:12px;font-weight:600;padding:7px 13px;border-radius:20px;border:1.5px solid var(--bd2);background:var(--sf);color:var(--mu);cursor:pointer;font-family:inherit;}
+.nchip.on{background:var(--bl);border-color:var(--bl);color:#fff;}
 </style>
 </head>
 <body>
@@ -276,6 +278,8 @@ table.db td:first-child{text-align:left;font-weight:600;}
     <div class="db-k"><div class="db-kv" id="kSap" style="color:var(--am)">--</div><div class="db-kl">S&#7855;p h&#7871;t</div></div>
     <div class="db-k"><div class="db-kv" id="kNhap7" style="color:var(--gr)">--</div><div class="db-kl">Nh&#7853;p 7 ng&#224;y</div></div>
   </div>
+
+  <div id="dbNhom" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
 
   <div class="db-sec">
     <div class="db-sech">C&#7843;nh b&#225;o s&#7855;p h&#7871;t <span class="tag sap">c&#242;n &#8804; 3 ng&#224;y b&#225;n</span></div>
@@ -406,6 +410,47 @@ function fmt1(n){return (Math.round(n*10)/10).toLocaleString('vi-VN');}
 function fmtD(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function fmtDFull(s){if(!s)return'';var d=new Date(s+'T00:00:00');var days=['CN','T2','T3','T4','T5','T6','T7'];return days[d.getDay()]+', '+fmtD(s);}
 
+/* ---------- NHOM SAN PHAM (Toan chot 13/08/2026) ----------
+   Nguon chuan: cot G tab DM_SanPham cua MasterData (doc bang JSONP gviz).
+   O nao cot G trong -> tu phan theo bo luat duoi (trung voi 22_md_nhom.gs). */
+var NHOM_TT=['Nem','Banh trung thu','Banh bao & dimsum','Mam','Nuoc ion kiem','Thuc pham khac','Hai san'];
+var NHOM_MAP=ld('khohn_nhom_v1',{});   // spKhoa -> nhom (tu cot G)
+var NHOM_LOC='';                        // chip dang chon, '' = tat ca
+function nhomTheoLuat(ten){
+  var k=hdNorm(ten);
+  if(k.indexOf('nem')===0) return 'Nem';
+  if(k.indexOf('banhnuong')===0||k.indexOf('banhdeo')===0||k.indexOf('banhlava')===0||k.indexOf('hop')===0) return 'Banh trung thu';
+  if(k.indexOf('banhbao')===0||k.indexOf('hacao')===0||k.indexOf('xiumai')===0||k.indexOf('set')===0) return 'Banh bao & dimsum';
+  if(k.indexOf('nuocmam')===0||k.indexOf('mam')===0) return 'Mam';
+  if(k.indexOf('nuoc')===0||k.indexOf('can5l')===0||k.indexOf('cocbinh')===0) return 'Nuoc ion kiem';
+  if(k.indexOf('moheo')===0||k.indexOf('vitcolung')===0||k.indexOf('duide')===0) return 'Thuc pham khac';
+  return 'Hai san';
+}
+function nhomCua(ten){ return NHOM_MAP[spKhoa(ten)]||nhomTheoLuat(ten); }
+/* doc cot F + G MasterData bang JSONP (fetch cross-origin bi CORS chan) */
+function taiNhom(){
+  var ten='mdg'+Date.now().toString(36);
+  var s=document.createElement('script');
+  window[ten]=function(d2){
+    try{ delete window[ten]; }catch(e){ window[ten]=undefined; }
+    if(s.parentNode) s.parentNode.removeChild(s);
+    var rows=(d2&&d2.table&&d2.table.rows)||[];
+    var m={};
+    rows.forEach(function(r){
+      var c=r.c||[];
+      function o(i){ return (c[i]&&c[i].v!=null)?String(c[i].v).trim():''; }
+      var t=o(5)||o(2), g=o(6);
+      if(t&&g&&g!=='Nhom') m[spKhoa(t)]=g;
+    });
+    if(Object.keys(m).length){ NHOM_MAP=m; sv('khohn_nhom_v1',m); veTatCa(); }
+  };
+  s.onerror=function(){ if(s.parentNode)s.parentNode.removeChild(s); };
+  s.src='https://docs.google.com/spreadsheets/d/1koko05SHlVy9f2qqhFNqvu6NeD-U8ktvU1UFd0ci0sQ/gviz/tq'
+    +'?tqx=responseHandler:'+ten+'&headers=1&sheet=DM_SanPham&_='+Date.now();
+  document.body.appendChild(s);
+}
+function chonNhom(n){ NHOM_LOC=(NHOM_LOC===n)?'':n; veTatCa(); }
+
 var DASH=ld('khohn_dash_v1',null);   // {luc, rows}
 var DANG_TAI=false;
 /* "Gan real time": tu keo moi 60 giay + keo ngay khi mo lai tab.
@@ -496,9 +541,31 @@ function _veTatCa(loi){
     +' - '+fmtD(todayStr())+' · tự làm mới mỗi 60 giây · số chỉ đổi khi kho bấm Sheet đẩy phiếu'
     +(loi?' · LẦN TẢI MỚI NHẤT LỖI - đang hiện số cũ':'');
 
-  var T=tinhTong(), ds=Object.keys(T.sp).sort();
+  var T=tinhTong(), dsTatCa=Object.keys(T.sp).sort();
   var kw=(document.getElementById('dbTim')||{}).value||'';
   kw=hdNorm(kw);
+
+  /* chip loc nhom */
+  var demNhom={};
+  dsTatCa.forEach(function(t){ var g=nhomCua(t); demNhom[g]=(demNhom[g]||0)+1; });
+  var chipEl=document.getElementById('dbNhom');
+  if(chipEl){
+    chipEl.innerHTML='';
+    var tatCa=document.createElement('button');
+    tatCa.className='nchip'+(NHOM_LOC===''?' on':'');
+    tatCa.textContent='Tat ca ('+dsTatCa.length+')';
+    tatCa.onclick=function(){ NHOM_LOC=''; veTatCa(); };
+    chipEl.appendChild(tatCa);
+    NHOM_TT.forEach(function(g){
+      if(!demNhom[g]) return;
+      var b=document.createElement('button');
+      b.className='nchip'+(NHOM_LOC===g?' on':'');
+      b.textContent=g+' ('+demNhom[g]+')';
+      b.onclick=(function(gg){ return function(){ chonNhom(gg); }; })(g);
+      chipEl.appendChild(b);
+    });
+  }
+  var ds=NHOM_LOC?dsTatCa.filter(function(t){ return nhomCua(t)===NHOM_LOC; }):dsTatCa;
 
   /* phan loai */
   var het=[], sap=[], tinh={};
@@ -511,11 +578,14 @@ function _veTatCa(loi){
     if(st2==='het')het.push(t); else if(st2==='sap')sap.push(t);
   });
 
-  /* KPI */
+  /* KPI - theo nhom dang chon */
+  var lsNhapLoc=NHOM_LOC?T.lsNhap.filter(function(r){ return nhomCua(r[1])===NHOM_LOC; }):T.lsNhap;
+  var tu7=lechNgay(todayStr(),-6), nhap7Loc=0;
+  lsNhapLoc.forEach(function(r){ if(r[0]>=tu7) nhap7Loc+=r[3]; });
   document.getElementById('kSP').textContent=ds.length;
   document.getElementById('kHet').textContent=het.length;
   document.getElementById('kSap').textContent=sap.length;
-  document.getElementById('kNhap7').textContent=fmt(T.nhap7);
+  document.getElementById('kNhap7').textContent=fmt(nhap7Loc);
 
   /* canh bao */
   var cb=document.getElementById('dbCanhBao'); cb.innerHTML='';
@@ -584,7 +654,7 @@ function _veTatCa(loi){
   /* lich su nhap */
   var ls=document.getElementById('dbNhap'); ls.innerHTML='';
   var theoNgay={};
-  T.lsNhap.forEach(function(r){ if(!theoNgay[r[0]])theoNgay[r[0]]=[]; theoNgay[r[0]].push(r); });
+  lsNhapLoc.forEach(function(r){ if(!theoNgay[r[0]])theoNgay[r[0]]=[]; theoNgay[r[0]].push(r); });
   var cacNgay=Object.keys(theoNgay).sort().reverse();
   if(!cacNgay.length) ls.innerHTML='<div style="padding:14px 15px;font-size:13px;color:var(--mu);">Chưa có phiếu nhập trong '+LS_NHAP_NGAY+' ngày.</div>';
   cacNgay.forEach(function(ng){
@@ -603,6 +673,7 @@ function _veTatCa(loi){
 
 window.addEventListener('DOMContentLoaded', function(){
   taiDanhMuc();
+  taiNhom();
   taiDuLieu(false);
   setInterval(function(){ taiDuLieu(true); }, 60000);          // 60 giay/lan
   document.addEventListener('visibilitychange', function(){    // mo lai tab -> keo ngay
