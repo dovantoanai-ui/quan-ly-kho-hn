@@ -1827,7 +1827,19 @@ function stDsSP(){
   // ưu tiên danh mục chuẩn MasterData (cột F, khớp hệ vận đơn sale)
   if(MDSP.length) return MDSP.map(function(x){ return x.ten; });
   if(PRODS.length) return PRODS;
-  return CAT.map(function(c){ return c.ten; });
+  // TUYỆT ĐỐI không rơi về CAT: danh mục cũ tab Data còn tên MISA viết hoa
+  // ("BÁNH NƯỚNG DỪA & TRỨNG MUỐI"...) không khớp hệ vận đơn — kho sẽ lệch tên.
+  // Ngày 11/08/2026 đã dính: đơn siêu thị của Hà mang 3 tên cũ, đối soát tách dòng.
+  return [];
+}
+/* tên có thuộc danh mục chuẩn không (khớp cột F hoặc tên in cột C, bỏ dấu) */
+function stTenHopLe(t){
+  var k=normKey(t); if(!k) return false;
+  for(var i=0;i<MDSP.length;i++){
+    if(normKey(MDSP[i].ten)===k || normKey(MDSP[i].tenIn)===k) return true;
+  }
+  for(var j=0;j<PRODS.length;j++){ if(normKey(PRODS[j])===k) return true; }
+  return false;
 }
 
 /* --- gợi ý cửa hàng --- */
@@ -1866,6 +1878,13 @@ function stHintDong(l){
 function stVeLines(){
   if(!ST.lines.length) ST.lines.push({ten:'',sl:1,gia:0,note:''});
   var ds=stDsSP();
+  if(!ds.length){
+    $('stLines').innerHTML='<div class="note err" style="margin-bottom:10px">'+
+      'Chưa tải được danh mục sản phẩm chuẩn (MasterData) — chưa lập được đơn siêu thị. '+
+      'Kiểm tra mạng rồi bấm <b>Tải lại danh sách CH + sản phẩm</b> bên dưới.</div>';
+    stVeTomTat();
+    return;
+  }
   var h='';
   ST.lines.forEach(function(l,i){
     stDongLaiGia(l);
@@ -1935,6 +1954,13 @@ function stDocDon(){
   if(!ST.ch){ toast('Chưa chọn cửa hàng'); return null; }
   var sps=ST.lines.filter(function(l){ return l.ten && String(l.ten).trim() && num(l.sl)>0; });
   if(!sps.length){ toast('Thêm ít nhất 1 sản phẩm có tên và SL lớn hơn 0'); return null; }
+  // chặn tên ngoài danh mục chuẩn — tên lạ gửi đi là kho lệch đối soát
+  for(var i=0;i<sps.length;i++){
+    if(!stTenHopLe(sps[i].ten)){
+      toast('"'+sps[i].ten+'" không có trong danh mục MasterData — chọn lại từ danh sách');
+      return null;
+    }
+  }
   var sale=ld('hdnt_nv','');
   if(!sale){ toast('Chưa đặt tên nhân viên — vào Cài đặt điền tên'); return null; }
   return {
