@@ -1623,6 +1623,14 @@ function mdPhanTichNV(d){
   });
   return ds;
 }
+/* ô số từ Sheet: gviz trả number, nhưng có ô người dùng gõ "151.000 đ" */
+function soSheet(o){
+  if(!o || o.v == null) return 0;
+  if(typeof o.v === 'number') return Math.round(o.v);
+  var s = String(o.v).replace(/[^\d]/g, '');
+  var x = parseInt(s, 10);
+  return isNaN(x) ? 0 : x;
+}
 function mdPhanTich(d){
   var rows = (d && d.table && d.table.rows) || [];
   var ds = [], da = {};
@@ -1638,7 +1646,7 @@ function mdPhanTich(d){
     var k = normKey(tenGui);
     if(da[k]) return;                                    // trùng thì giữ dòng đầu
     da[k] = 1;
-    ds.push({ ma:o(1), ten:tenGui, tenIn:tenIn, dvt:o(4) });
+    ds.push({ ma:o(1), ten:tenGui, tenIn:tenIn, dvt:o(4), gia:soSheet(c[6]) });
   });
   return ds;
 }
@@ -1720,7 +1728,9 @@ function veMdInfo(){
                    '<b>Bất kỳ ai có đường liên kết · Người xem</b>, rồi bấm Tải lại danh mục.';
     return;
   }
-  el.innerHTML = '<b>'+MDSP.length+'</b> sản phẩm · <b>'+MDNV.length+'</b> nhân viên'+
+  var coGia = 0;
+  MDSP.forEach(function(x){ if(num(x.gia)>0) coGia++; });
+  el.innerHTML = '<b>'+MDSP.length+'</b> sản phẩm ('+coGia+' có giá siêu thị) · <b>'+MDNV.length+'</b> nhân viên'+
                  (MD_LUC ? ' · nạp lúc '+esc(MD_LUC) : '')+
                  '<br>Sửa Sheet xong, bấm <b>Tải lại danh mục</b> hoặc mở lại app là dữ liệu mới về.';
 }
@@ -1769,16 +1779,27 @@ function stBatVat(bat){
   }
   stVeTomTat();
 }
-/* Giá tự điền phải bám theo đúng cặp cửa hàng + sản phẩm hiện tại.
-   Đổi cửa hàng hoặc đổi SP thì giá tự điền cũ bị bỏ, lấy lại giá đúng.
+/* --- giá chuẩn từ cột G Sheet MasterData --- */
+function stGiaChuan(ten){
+  var x = mdTheoTen(ten);
+  return x ? num(x.gia) : 0;
+}
+/* Nguồn giá tự điền, theo đúng thứ tự Toàn chốt:
+   1. giá riêng đã dùng cho CHÍNH cửa hàng này  2. giá bảng chuẩn  3. không có */
+function stNguonGia(l){
+  var g = stGiaNho(ST.ch, l.ten);
+  if(g) return { gia:g, tu:'ch:'+stKeyGia(ST.ch,l.ten) };
+  g = stGiaChuan(l.ten);
+  if(g) return { gia:g, tu:'md:'+normKey(l.ten) };
+  return { gia:0, tu:'' };
+}
+/* Giá tự điền phải bám đúng nguồn hiện tại. Đổi cửa hàng hay đổi SP thì
+   giá tự điền cũ bị bỏ và lấy lại giá đúng.
    Giá sale gõ tay (giaTu rỗng) thì giữ nguyên, không đụng vào. */
 function stDongLaiGia(l){
-  var key=stKeyGia(ST.ch,l.ten);
-  if(l.giaTu && l.giaTu!==key){ l.gia=0; l.giaTu=''; }
-  if(!num(l.gia)){
-    var g=stGiaNho(ST.ch,l.ten);
-    if(g){ l.gia=g; l.giaTu=key; }
-  }
+  var n = stNguonGia(l);
+  if(l.giaTu && l.giaTu !== n.tu){ l.gia=0; l.giaTu=''; }
+  if(!num(l.gia) && n.gia){ l.gia=n.gia; l.giaTu=n.tu; }
 }
 /* --- tính tiền: CK trừ trên tổng hàng, VAT tính sau CK --- */
 function stTinhTien(){
@@ -1827,19 +1848,7 @@ function stDsSP(){
   // ưu tiên danh mục chuẩn MasterData (cột F, khớp hệ vận đơn sale)
   if(MDSP.length) return MDSP.map(function(x){ return x.ten; });
   if(PRODS.length) return PRODS;
-  // TUYỆT ĐỐI không rơi về CAT: danh mục cũ tab Data còn tên MISA viết hoa
-  // ("BÁNH NƯỚNG DỪA & TRỨNG MUỐI"...) không khớp hệ vận đơn — kho sẽ lệch tên.
-  // Ngày 11/08/2026 đã dính: đơn siêu thị của Hà mang 3 tên cũ, đối soát tách dòng.
-  return [];
-}
-/* tên có thuộc danh mục chuẩn không (khớp cột F hoặc tên in cột C, bỏ dấu) */
-function stTenHopLe(t){
-  var k=normKey(t); if(!k) return false;
-  for(var i=0;i<MDSP.length;i++){
-    if(normKey(MDSP[i].ten)===k || normKey(MDSP[i].tenIn)===k) return true;
-  }
-  for(var j=0;j<PRODS.length;j++){ if(normKey(PRODS[j])===k) return true; }
-  return false;
+  return CAT.map(function(c){ return c.ten; });
 }
 
 /* --- gợi ý cửa hàng --- */
@@ -1868,23 +1877,17 @@ function stChonCH(ten){
 /* --- dòng sản phẩm --- */
 function stThemDong(){ ST.lines.push({ten:'',sl:1,gia:0,note:''}); stVeLines(); }
 function stHintDong(l){
-  var nho=stGiaNho(ST.ch,l.ten);
   if(!l.ten) return 'Chọn sản phẩm rồi nhập đơn giá';
   var dv=stDvt(l.ten);
   var s=(dv?'ĐVT '+esc(dv)+' · ':'');
-  if(nho) return s+'Giá lần trước cho CH này: <b>'+fmt(nho)+'</b> · sửa đè được';
-  return s+'Chưa có giá cũ cho cửa hàng này — nhập tay, app nhớ cho lần sau';
+  var gCH=stGiaNho(ST.ch,l.ten), gMD=stGiaChuan(l.ten);
+  if(gCH) return s+'Giá riêng cửa hàng này: <b>'+fmt(gCH)+'</b>'+(gMD?' · bảng giá chung '+fmt(gMD):'');
+  if(gMD) return s+'Giá bảng chuẩn: <b>'+fmt(gMD)+'</b> · sửa đè được, app nhớ riêng cho CH này';
+  return s+'Chưa có giá — nhập tay, app nhớ cho lần sau';
 }
 function stVeLines(){
   if(!ST.lines.length) ST.lines.push({ten:'',sl:1,gia:0,note:''});
   var ds=stDsSP();
-  if(!ds.length){
-    $('stLines').innerHTML='<div class="note err" style="margin-bottom:10px">'+
-      'Chưa tải được danh mục sản phẩm chuẩn (MasterData) — chưa lập được đơn siêu thị. '+
-      'Kiểm tra mạng rồi bấm <b>Tải lại danh sách CH + sản phẩm</b> bên dưới.</div>';
-    stVeTomTat();
-    return;
-  }
   var h='';
   ST.lines.forEach(function(l,i){
     stDongLaiGia(l);
@@ -1954,13 +1957,6 @@ function stDocDon(){
   if(!ST.ch){ toast('Chưa chọn cửa hàng'); return null; }
   var sps=ST.lines.filter(function(l){ return l.ten && String(l.ten).trim() && num(l.sl)>0; });
   if(!sps.length){ toast('Thêm ít nhất 1 sản phẩm có tên và SL lớn hơn 0'); return null; }
-  // chặn tên ngoài danh mục chuẩn — tên lạ gửi đi là kho lệch đối soát
-  for(var i=0;i<sps.length;i++){
-    if(!stTenHopLe(sps[i].ten)){
-      toast('"'+sps[i].ten+'" không có trong danh mục MasterData — chọn lại từ danh sách');
-      return null;
-    }
-  }
   var sale=ld('hdnt_nv','');
   if(!sale){ toast('Chưa đặt tên nhân viên — vào Cài đặt điền tên'); return null; }
   return {
